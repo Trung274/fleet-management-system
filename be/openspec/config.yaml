@@ -1,0 +1,91 @@
+context: |
+  Project: Gym Management System - Backend API
+  Tech stack: Node.js, Express.js v4, MongoDB (Mongoose v8), JWT (access + refresh tokens), Swagger/OpenAPI docs
+  Language: JavaScript (CommonJS)
+
+  Directory structure:
+    src/server.js              — App entry: registers middleware and routes
+    src/config/database.js     — MongoDB connection
+    src/config/swagger.js      — swagger-jsdoc config
+    src/config/seed*.js        — Data seed scripts
+    src/controllers/           — Business logic per domain
+    src/middleware/auth.js     — protect / authorize / checkPermission / checkAnyPermission
+    src/middleware/errorHandler.js — Global error handler (4-param Express middleware)
+    src/models/                — Mongoose schemas
+    src/routes/                — Express routers (1 file = 1 domain)
+    src/utils/asyncHandler.js  — Async wrapper (eliminates try/catch in controllers)
+    src/utils/errorResponse.js — Custom Error class with statusCode
+
+  Auth system (RBAC):
+    - JWT access token + refresh token (stored in DB, deleted on logout)
+    - changedPasswordAfter() invalidates token after password change
+    - Middleware chain: protect → authorize() or checkPermission()
+    - protect: validates JWT, populates req.user (with role)
+    - authorize(...roleNames): checks req.user.role.name — requires role to be populated
+    - checkPermission(resource, action): RBAC permission check
+    - checkAnyPermission(permissions[]): OR logic, pass if any permission matches
+    - WARNING: using lean() bypasses pre-hooks that populate role — will break authorize()
+
+  Environment variables (from .env):
+    NODE_ENV             — development | production
+    PORT                 — server port (default 5000)
+    MONGODB_URI          — MongoDB connection string
+    JWT_SECRET           — access token secret (≥32 chars in prod)
+    JWT_EXPIRE           — access token TTL (e.g. 7d)
+    JWT_REFRESH_SECRET   — refresh token secret
+    JWT_REFRESH_EXPIRE   — refresh token TTL (e.g. 30d)
+    API_VERSION          — API version prefix (default v1)
+    CORS_ORIGIN          — allowed frontend origin
+    RATE_LIMIT_WINDOW_MS — rate limit window in ms (default 900000)
+    RATE_LIMIT_MAX_REQUESTS — max requests per window (default 100)
+    Note: Rate limiting only enabled in production (NODE_ENV=production)
+
+  Security status:
+    DONE: helmet, CORS whitelist, rate limiting (prod only), mongo-sanitize,
+          body limit 10mb, bcryptjs password hashing (rounds=10), JWT rotation
+    MISSING: HTTPS enforcement (handle at reverse proxy), request logging, input validation library
+
+  API response format:
+    Success: { success: true, data: ..., count: ... }
+    Error:   { success: false, error: "message" }
+    Note: use "error" not "message" for error cases
+
+  Code conventions:
+    Controllers:
+      - ALWAYS wrap with asyncHandler — no manual try/catch
+      - Throw errors with: next(new ErrorResponse('message', statusCode))
+      - Example: const getItem = asyncHandler(async (req, res, next) => { ... })
+
+    Error handling order in server.js (ORDER MATTERS):
+      app.use(errorHandler)  ← must come BEFORE 404 handler
+      app.use((req, res) => res.status(404).json(...))
+      errorHandler auto-handles: CastError→404, DuplicateKey→400, ValidationError→400, JWT errors→401
+
+    Mongoose models:
+      - Always use { timestamps: true }
+      - Use { toJSON: { virtuals: true }, toObject: { virtuals: true } } if model has virtuals
+      - Add index for frequently queried fields
+      - Use select: false for sensitive fields (e.g. password)
+      - Override toJSON() to strip sensitive fields from responses
+
+    Routes:
+      - One file per domain: src/routes/<domain>.routes.js
+      - Register in server.js as: /api/${API_VERSION}/<domain>
+      - Write Swagger JSDoc annotations inside route files (not controllers)
+
+rules:
+  proposal:
+    - State which domain is affected (auth, members, billing, trainers, etc.)
+    - Note any breaking API changes
+    - Include rollback plan for DB schema changes
+  specs:
+    - Use Given/When/Then format for scenarios
+    - Include negative/error scenarios (401, 403, 404, 400)
+    - Specify HTTP method, route path, and expected status codes
+  design:
+    - List affected files (controllers, models, routes, middleware)
+    - Note Mongoose schema changes explicitly
+    - Diagram data flow if complex
+  tasks:
+    - Group by: Model → Controller → Route → Swagger docs → Tests
+    - Each task should be completable in one focused session

@@ -1,0 +1,28 @@
+<div class="dashboard-layout">
+  <app-header />
+  <main class="dashboard-main">
+    <div class="welcome-section">
+      <h1 class="welcome-title">
+        Xin chào, {{ authService.user()?.name ?? 'User' }}! 👋
+      </h1>
+      <p class="welcome-subtitle">
+        Chào mừng đến với hệ thống quản lý xe Fleet Management.
+      </p>
+    </div>
+
+    <!-- Stats placeholder cards -->
+    <div class="stats-grid">
+      @for (card of statCards; track card.label) {
+        <div class="stat-card">
+          <div class="stat-icon" [style.background]="card.gradient">
+            <span [innerHTML]="card.icon"></span>
+          </div>
+          <div class="stat-info">
+            <p class="stat-value">—</p>
+            <p class="stat-label">{{ card.label }}</p>
+          </div>
+        </div>
+      }
+    </div>
+  </main>
+</div>

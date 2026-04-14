@@ -1,5 +1,5 @@
 context: |
-  Project: Gym Management System - Backend API
+  Project: Bus Management System - Backend API
   Tech stack: Node.js, Express.js v4, MongoDB (Mongoose v8), JWT (access + refresh tokens), Swagger/OpenAPI docs
   Language: JavaScript (CommonJS)
 
@@ -16,6 +16,12 @@ context: |
     src/utils/asyncHandler.js  — Async wrapper (eliminates try/catch in controllers)
     src/utils/errorResponse.js — Custom Error class with statusCode
 
+  Existing codebase (already implemented — do NOT recreate):
+    Models:      User.model.js, Role.model.js, Permission.model.js
+    Controllers: auth.controller.js, user.controller.js, role.controller.js, permission.controller.js
+    Routes:      auth.routes.js, user.routes.js, role.routes.js, permission.routes.js
+    Existing API base path: /api/v1/
+
   Auth system (RBAC):
     - JWT access token + refresh token (stored in DB, deleted on logout)
     - changedPasswordAfter() invalidates token after password change
@@ -25,6 +31,10 @@ context: |
     - checkPermission(resource, action): RBAC permission check
     - checkAnyPermission(permissions[]): OR logic, pass if any permission matches
     - WARNING: using lean() bypasses pre-hooks that populate role — will break authorize()
+    - Admin role automatically bypasses all permission checks (no need to assign individually)
+    - req.user instance methods: hasPermission(resource, action), hasAnyPermission([{resource, action}])
+    - Permission format: resource:action (e.g. members:create, members:read, trainers:update)
+    - User can only belong to ONE role at a time
 
   Environment variables (from .env):
     NODE_ENV             — development | production
@@ -73,6 +83,75 @@ context: |
       - Register in server.js as: /api/${API_VERSION}/<domain>
       - Write Swagger JSDoc annotations inside route files (not controllers)
 
+    Swagger JSDoc conventions:
+      - summary MUST end with a parenthetical showing WHO can access (role names):
+          No auth required:      summary: "Get bus schedule (Public)"
+          Any logged-in user:    summary: "Get my profile (Protected)"
+          Specific role:         summary: "Create a new user (Admin only)"
+          Multiple roles:        summary: "Get all staff (Admin, Manager)"
+        → The parenthetical = role names that CAN access this endpoint
+        → "Public" = no protect middleware, no token needed
+        → Always wrap in double quotes if summary contains special chars (YAML rule)
+      - Add `security: - bearerAuth: []` for ANY route using `protect` middleware
+      - Do NOT add security field for Public endpoints
+      - Response codes must match middleware used:
+          No middleware (Public) → only 2xx
+          protect only    → include 401 (Unauthorized)
+          authorize()     → include 401 + 403 (Forbidden)
+          checkPermission → include 401 + 403 (Forbidden - insufficient permission)
+      - Always include at least: success 2xx, 400 (bad request), and relevant auth codes
+
+    Seed files:
+      - DO NOT add new seeds into seedRolesPermissions.js — that file only handles core RBAC setup
+      - Create a SEPARATE seed file per domain: src/config/seed<Domain>.js (e.g. seedMembers.js)
+      - Add a new npm script in package.json: "seed:<domain>": "node src/config/seed<Domain>.js"
+      - Each seed file must: connect to DB, insert data idempotently, then disconnect
+      - seedRolesPermissions.js behavior: wipes and recreates all roles+permissions, preserves admin users
+
+    Adding a new module (standard checklist):
+      1. Create permissions via API or add to seed file (format: resource:action)
+      2. Create Model in src/models/<Domain>.model.js
+      3. Create Controller in src/controllers/<domain>.controller.js (use asyncHandler)
+      4. Create Routes in src/routes/<domain>.routes.js (add Swagger JSDoc here)
+      5. Register route in server.js: app.use('/api/v1/<domain>', require('./routes/<domain>.routes'))
+      6. Assign new permissions to relevant roles via API
+
+    Adding a field to an existing model (MUST update ALL of these):
+      1. Model — add field to Mongoose schema
+      2. Controller — add field to allowedFields (update), business logic (create/update actions)
+      3. Routes — add field to Swagger requestBody in ALL relevant endpoints
+      → Missing any of these creates a silent mismatch between schema, logic, and docs
+
+  Testing conventions:
+    Test structure:
+      - Keep test suite minimal: 15-20 tests per feature for academic documentation
+      - Use tag-based classification in test descriptions:
+          [Integration] — End-to-end API tests with database
+          [Negative]    — Validation and error handling tests
+          [Security]    — Authentication and authorization tests
+          [Performance] — Pagination, load, and performance tests
+      - Example: test('[Integration] Create vehicle with valid data', async () => {...})
+      - Location: src/tests/<domain>.api.test.js
+
+    Test categories (aim for balanced distribution):
+      - Integration Tests (40-50%): CRUD operations, search, filter
+      - Negative Tests (25-35%): Validation, missing fields, invalid data, business rules
+      - Security Tests (15-25%): Authentication required, authorization checks
+      - Performance Tests (5-10%): Pagination, large datasets
+
+    Test report generation:
+      - ALWAYS generate test report after implementing tests
+      - Command: npm run test:report <feature-name>
+      - Output: be/docs/TEST_REPORT_<FEATURE-NAME>.md
+      - Report includes: test cases table, classification, methodology, results
+      - Format: Academic English suitable for project documentation
+      - Script location: be/scripts/generate-test-report.js
+
+    Test prerequisites:
+      - Admin user must exist (email: admin@example.com, password: Admin@123)
+      - Run `npm run seed` before first test execution
+      - Ensure .env has MONGODB_URI, JWT_SECRET, JWT_EXPIRE configured
+
 rules:
   proposal:
     - State which domain is affected (auth, members, billing, trainers, etc.)
@@ -89,3 +168,8 @@ rules:
   tasks:
     - Group by: Model → Controller → Route → Swagger docs → Tests
     - Each task should be completable in one focused session
+    - ALWAYS include test report generation as final task:
+        "Task X: Generate test report"
+        - Run: npm run test:report <feature-name>
+        - Verify report generated in be/docs/TEST_REPORT_<FEATURE-NAME>.md
+        - Ensure 15-20 tests with proper [Integration], [Negative], [Security], [Performance] tags

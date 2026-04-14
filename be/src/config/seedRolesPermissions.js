@@ -48,6 +48,12 @@ const seedData = async () => {
       // Profile Management (cho user thường)
       { resource: 'profile', action: 'read', description: 'View own profile' },
       { resource: 'profile', action: 'update', description: 'Update own profile' },
+
+      // Vehicle Management
+      { resource: 'vehicles', action: 'create', description: 'Create new vehicles' },
+      { resource: 'vehicles', action: 'read', description: 'View vehicle details' },
+      { resource: 'vehicles', action: 'update', description: 'Update vehicle information' },
+      { resource: 'vehicles', action: 'delete', description: 'Delete vehicles' },
     ]);
     console.log('✓ Created permissions');
 
@@ -60,7 +66,19 @@ const seedData = async () => {
     });
     console.log('✓ Created admin role');
 
-    // 3. Tạo User Role (limited permissions)
+    // 3. Tạo Manager Role (vehicle management permissions)
+    const managerPermissions = permissions
+      .filter(p => p.resource === 'vehicles' || p.resource === 'profile')
+      .map(p => p._id);
+
+    const managerRole = await Role.create({
+      name: 'manager',
+      description: 'Manager with vehicle management access',
+      permissions: managerPermissions
+    });
+    console.log('✓ Created manager role');
+
+    // 4. Tạo User Role (limited permissions)
     const userPermissions = permissions
       .filter(p => p.resource === 'profile')
       .map(p => p._id);
@@ -72,7 +90,7 @@ const seedData = async () => {
     });
     console.log('✓ Created user role');
 
-    // 4. Tạo tài khoản Admin mặc định (optional)
+    // 5. Tạo tài khoản Admin mặc định (optional)
     const adminExists = await User.findOne({ email: 'admin@example.com' });
     if (!adminExists) {
       await User.create({
@@ -91,7 +109,7 @@ const seedData = async () => {
     console.log('\n🎉 Seed completed successfully!');
     console.log(`\n📊 Summary:`);
     console.log(`   Permissions: ${permissions.length}`);
-    console.log(`   Roles: 2 (admin, user)`);
+    console.log(`   Roles: 3 (admin, manager, user)`);
     console.log(`   Users: ${adminExists ? 'Admin already exists' : '1 admin created'}`);
 
     process.exit(0);

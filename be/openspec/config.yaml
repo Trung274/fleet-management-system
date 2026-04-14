@@ -168,8 +168,4 @@ rules:
   tasks:
     - Group by: Model → Controller → Route → Swagger docs → Tests
     - Each task should be completable in one focused session
-    - ALWAYS include test report generation as final task:
-        "Task X: Generate test report"
-        - Run: npm run test:report <feature-name>
-        - Verify report generated in be/docs/TEST_REPORT_<FEATURE-NAME>.md
-        - Ensure 15-20 tests with proper [Integration], [Negative], [Security], [Performance] tags
+    - ALWAYS include test report generation as final task with description "Task X - Generate test report - Run npm run test:report <feature-name> - Verify report generated in be/docs/TEST_REPORT_<FEATURE-NAME>.md - Ensure 15-20 tests with proper [Integration], [Negative], [Security], [Performance] tags"

@@ -9,7 +9,8 @@
     "test": "jest --coverage",
     "test:report": "node scripts/generate-test-report.js",
     "seed:roles": "node src/config/seedRolesPermissions.js",
-    "seed:vehicles": "node src/config/seedVehicles.js"
+    "seed:vehicles": "node src/config/seedVehicles.js",
+    "seed:drivers": "node src/config/seedDrivers.js"
   },
   "keywords": [
     "nodejs",

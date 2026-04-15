@@ -113,8 +113,7 @@ const driverSchema = new mongoose.Schema({
 });
 
 // Indexes for performance
-driverSchema.index({ licenseNumber: 1 }, { unique: true });
-driverSchema.index({ email: 1 }, { unique: true });
+// Note: licenseNumber and email indexes are created automatically by unique: true
 driverSchema.index({ employmentStatus: 1 });
 driverSchema.index({ createdAt: -1 });
 

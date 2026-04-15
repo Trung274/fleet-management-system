@@ -66,6 +66,12 @@ const seedData = async () => {
       { resource: 'routes', action: 'read', description: 'View route details' },
       { resource: 'routes', action: 'update', description: 'Update route information' },
       { resource: 'routes', action: 'delete', description: 'Delete routes' },
+
+      // Trip Management
+      { resource: 'trips', action: 'create', description: 'Create new trips' },
+      { resource: 'trips', action: 'read', description: 'View trip details' },
+      { resource: 'trips', action: 'update', description: 'Update trip information' },
+      { resource: 'trips', action: 'delete', description: 'Delete trips' },
     ]);
     console.log('✓ Created permissions');
 
@@ -78,14 +84,14 @@ const seedData = async () => {
     });
     console.log('✓ Created admin role');
 
-    // 3. Tạo Manager Role (vehicle, driver, and route management permissions)
+    // 3. Tạo Manager Role (vehicle, driver, route, and trip management permissions)
     const managerPermissions = permissions
-      .filter(p => p.resource === 'vehicles' || p.resource === 'drivers' || p.resource === 'routes' || p.resource === 'profile')
+      .filter(p => p.resource === 'vehicles' || p.resource === 'drivers' || p.resource === 'routes' || p.resource === 'trips' || p.resource === 'profile')
       .map(p => p._id);
 
     const managerRole = await Role.create({
       name: 'manager',
-      description: 'Manager with vehicle, driver, and route management access',
+      description: 'Manager with vehicle, driver, route, and trip management access',
       permissions: managerPermissions
     });
     console.log('✓ Created manager role');

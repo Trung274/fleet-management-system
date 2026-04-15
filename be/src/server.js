@@ -56,6 +56,7 @@ app.use(`/api/${API_VERSION}/permissions`, require('./routes/permission.routes')
 app.use(`/api/${API_VERSION}/vehicles`, require('./routes/vehicle.routes'));
 app.use(`/api/${API_VERSION}/drivers`, require('./routes/driver.routes'));
 app.use(`/api/${API_VERSION}/routes`, require('./routes/route.routes'));
+app.use(`/api/${API_VERSION}/trips`, require('./routes/trip.routes'));
 
 // Root Route
 app.get('/', (req, res) => {

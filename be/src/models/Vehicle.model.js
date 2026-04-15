@@ -59,7 +59,7 @@ const vehicleSchema = new mongoose.Schema({
 });
 
 // Indexes for performance
-vehicleSchema.index({ registrationNumber: 1 });
+// Note: registrationNumber index is created automatically by unique: true
 vehicleSchema.index({ status: 1 });
 vehicleSchema.index({ createdAt: -1 });
 

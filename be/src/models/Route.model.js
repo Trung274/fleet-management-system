@@ -84,7 +84,7 @@ const routeSchema = new mongoose.Schema({
 });
 
 // Indexes for performance
-routeSchema.index({ code: 1 }, { unique: true });
+// Note: code index is created automatically by unique: true
 routeSchema.index({ status: 1 });
 routeSchema.index({ createdAt: -1 });
 

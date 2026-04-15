@@ -27,8 +27,7 @@ const roleSchema = new mongoose.Schema({
   toObject: { virtuals: true }
 });
 
-// Index cho performance
-roleSchema.index({ name: 1 });
+// Note: name index is created automatically by unique: true
 
 // Populate permissions khi query
 roleSchema.pre(/^find/, function(next) {

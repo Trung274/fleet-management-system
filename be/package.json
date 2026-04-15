@@ -11,7 +11,8 @@
     "seed:roles": "node src/config/seedRolesPermissions.js",
     "seed:vehicles": "node src/config/seedVehicles.js",
     "seed:drivers": "node src/config/seedDrivers.js",
-    "seed:routes": "node src/config/seedRoutes.js"
+    "seed:routes": "node src/config/seedRoutes.js",
+    "seed:trips": "node src/config/seedTrips.js"
   },
   "keywords": [
     "nodejs",

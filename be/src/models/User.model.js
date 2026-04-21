@@ -122,6 +122,7 @@ userSchema.methods.toJSON = function() {
   const user = this.toObject();
   delete user.password;
   delete user.refreshTokens;
+  delete user.passwordChangedAt;
   delete user.passwordResetToken;
   delete user.passwordResetExpire;
   delete user.__v;

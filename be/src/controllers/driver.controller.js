@@ -1,6 +1,10 @@
 const Driver = require('../models/Driver.model');
+const Trip = require('../models/Trip.model');
 const asyncHandler = require('../utils/asyncHandler');
 const ErrorResponse = require('../utils/errorResponse');
+
+// Escape special regex characters to prevent ReDoS attacks
+const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 // @desc    Create new driver
 // @route   POST /api/v1/drivers
@@ -41,7 +45,7 @@ exports.getAllDrivers = asyncHandler(async (req, res, next) => {
 
   // Search across firstName, lastName, email, and licenseNumber
   if (req.query.search) {
-    const searchRegex = new RegExp(req.query.search, 'i');
+    const searchRegex = new RegExp(escapeRegex(req.query.search), 'i');
     query.$or = [
       { firstName: searchRegex },
       { lastName: searchRegex },
@@ -135,11 +139,22 @@ exports.updateDriver = asyncHandler(async (req, res, next) => {
 // @route   DELETE /api/v1/drivers/:id
 // @access  Private (drivers:delete)
 exports.deleteDriver = asyncHandler(async (req, res, next) => {
-  const driver = await Driver.findByIdAndDelete(req.params.id);
+  const driver = await Driver.findById(req.params.id);
 
   if (!driver) {
     return next(new ErrorResponse(`Driver not found with id of ${req.params.id}`, 404));
   }
+
+  // Check for active or scheduled trips before deleting
+  const activeTrip = await Trip.findOne({
+    driver: req.params.id,
+    status: { $in: ['scheduled', 'in-progress', 'delayed'] }
+  });
+  if (activeTrip) {
+    return next(new ErrorResponse('Cannot delete driver who has active or scheduled trips', 400));
+  }
+
+  await driver.deleteOne();
 
   res.status(200).json({
     success: true,

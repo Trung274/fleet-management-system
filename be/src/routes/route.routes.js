@@ -81,7 +81,7 @@ router.post('/',
  * @swagger
  * /api/v1/routes:
  *   get:
- *     summary: "Get all routes (Admin, Manager)"
+ *     summary: "Get all routes (Authenticated)"
  *     tags: [Routes]
  *     security:
  *       - bearerAuth: []
@@ -121,12 +121,9 @@ router.post('/',
  *         description: List of routes with pagination
  *       401:
  *         description: Unauthorized
- *       403:
- *         description: Forbidden - insufficient permissions
  */
 router.get('/', 
   protect, 
-  checkPermission('routes', 'read'),
   routeController.getAllRoutes
 );
 
@@ -134,7 +131,7 @@ router.get('/',
  * @swagger
  * /api/v1/routes/{id}:
  *   get:
- *     summary: "Get route by ID (Admin, Manager)"
+ *     summary: "Get route by ID (Authenticated)"
  *     tags: [Routes]
  *     security:
  *       - bearerAuth: []
@@ -152,12 +149,9 @@ router.get('/',
  *         description: Route not found
  *       401:
  *         description: Unauthorized
- *       403:
- *         description: Forbidden - insufficient permissions
  */
 router.get('/:id', 
   protect, 
-  checkPermission('routes', 'read'),
   routeController.getRouteById
 );
 

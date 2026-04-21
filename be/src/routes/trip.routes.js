@@ -137,7 +137,7 @@ router.post('/', protect, checkPermission('trips', 'create'), createTrip);
  * @swagger
  * /api/v1/trips:
  *   get:
- *     summary: "Get all trips (Admin, Manager)"
+ *     summary: "Get all trips (Authenticated)"
  *     tags: [Trips]
  *     security:
  *       - bearerAuth: []
@@ -201,13 +201,13 @@ router.post('/', protect, checkPermission('trips', 'create'), createTrip);
  *       401:
  *         description: Unauthorized
  */
-router.get('/', protect, checkPermission('trips', 'read'), getAllTrips);
+router.get('/', protect, getAllTrips);
 
 /**
  * @swagger
  * /api/v1/trips/{id}:
  *   get:
- *     summary: "Get trip by ID (Admin, Manager)"
+ *     summary: "Get trip by ID (Authenticated)"
  *     tags: [Trips]
  *     security:
  *       - bearerAuth: []
@@ -226,7 +226,7 @@ router.get('/', protect, checkPermission('trips', 'read'), getAllTrips);
  *       404:
  *         description: Trip not found
  */
-router.get('/:id', protect, checkPermission('trips', 'read'), getTripById);
+router.get('/:id', protect, getTripById);
 
 /**
  * @swagger

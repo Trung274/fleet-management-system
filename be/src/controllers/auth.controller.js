@@ -124,6 +124,11 @@ exports.refreshToken = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse('User not found', 404));
   }
 
+  // Prevent deactivated users from refreshing tokens
+  if (!user.isActive) {
+    return next(new ErrorResponse('Account is deactivated', 401));
+  }
+
   const tokenExists = user.refreshTokens.some(rt => rt.token === refreshToken);
   if (!tokenExists) {
     return next(new ErrorResponse('Invalid refresh token', 401));

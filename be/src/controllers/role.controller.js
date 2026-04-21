@@ -1,4 +1,5 @@
 const Role = require('../models/Role.model');
+const User = require('../models/User.model');
 const asyncHandler = require('../utils/asyncHandler');
 const ErrorResponse = require('../utils/errorResponse');
 
@@ -91,9 +92,15 @@ exports.deleteRole = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse(`Role not found with id of ${req.params.id}`, 404));
   }
 
-  // Không cho xóa role mặc định
-  if (['admin', 'user'].includes(role.name)) {
+  // Không cho xóa các system roles
+  if (['admin', 'manager', 'user'].includes(role.name)) {
     return next(new ErrorResponse('Cannot delete default system roles', 400));
+  }
+
+  // Kiểm tra role có đang được sử dụng không
+  const usersWithRole = await User.countDocuments({ role: role._id });
+  if (usersWithRole > 0) {
+    return next(new ErrorResponse(`Cannot delete role: ${usersWithRole} user(s) are currently assigned this role`, 400));
   }
 
   await role.deleteOne();

@@ -79,7 +79,7 @@ router.post('/',
  * @swagger
  * /api/v1/vehicles:
  *   get:
- *     summary: "Get all vehicles (Admin, Manager)"
+ *     summary: "Get all vehicles (Authenticated)"
  *     tags: [Vehicles]
  *     security:
  *       - bearerAuth: []
@@ -114,12 +114,9 @@ router.post('/',
  *         description: List of vehicles with pagination
  *       401:
  *         description: Unauthorized
- *       403:
- *         description: Forbidden - insufficient permissions
  */
 router.get('/', 
   protect, 
-  checkPermission('vehicles', 'read'),
   vehicleController.getAllVehicles
 );
 
@@ -127,7 +124,7 @@ router.get('/',
  * @swagger
  * /api/v1/vehicles/{id}:
  *   get:
- *     summary: "Get vehicle by ID (Admin, Manager)"
+ *     summary: "Get vehicle by ID (Authenticated)"
  *     tags: [Vehicles]
  *     security:
  *       - bearerAuth: []
@@ -145,12 +142,9 @@ router.get('/',
  *         description: Vehicle not found
  *       401:
  *         description: Unauthorized
- *       403:
- *         description: Forbidden - insufficient permissions
  */
 router.get('/:id', 
   protect, 
-  checkPermission('vehicles', 'read'),
   vehicleController.getVehicleById
 );
 

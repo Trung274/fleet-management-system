@@ -1,6 +1,10 @@
 const Vehicle = require('../models/Vehicle.model');
+const Trip = require('../models/Trip.model');
 const asyncHandler = require('../utils/asyncHandler');
 const ErrorResponse = require('../utils/errorResponse');
+
+// Escape special regex characters to prevent ReDoS attacks
+const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 // @desc    Create new vehicle
 // @route   POST /api/v1/vehicles
@@ -35,7 +39,7 @@ exports.getAllVehicles = asyncHandler(async (req, res, next) => {
 
   // Search across registrationNumber, make, and model
   if (req.query.search) {
-    const searchRegex = new RegExp(req.query.search, 'i');
+    const searchRegex = new RegExp(escapeRegex(req.query.search), 'i');
     query.$or = [
       { registrationNumber: searchRegex },
       { make: searchRegex },
@@ -128,11 +132,22 @@ exports.updateVehicle = asyncHandler(async (req, res, next) => {
 // @route   DELETE /api/v1/vehicles/:id
 // @access  Private (vehicles:delete)
 exports.deleteVehicle = asyncHandler(async (req, res, next) => {
-  const vehicle = await Vehicle.findByIdAndDelete(req.params.id);
+  const vehicle = await Vehicle.findById(req.params.id);
 
   if (!vehicle) {
     return next(new ErrorResponse(`Vehicle not found with id of ${req.params.id}`, 404));
   }
+
+  // Check for active or scheduled trips before deleting
+  const activeTrip = await Trip.findOne({
+    vehicle: req.params.id,
+    status: { $in: ['scheduled', 'in-progress', 'delayed'] }
+  });
+  if (activeTrip) {
+    return next(new ErrorResponse('Cannot delete vehicle that has active or scheduled trips', 400));
+  }
+
+  await vehicle.deleteOne();
 
   res.status(200).json({
     success: true,

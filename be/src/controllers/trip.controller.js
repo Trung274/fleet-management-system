@@ -314,7 +314,7 @@ exports.updateTrip = asyncHandler(async (req, res, next) => {
     }
   }
 
-  // If changing times, check availability for existing resources
+  // If changing times (but NOT also changing vehicle — that case was already handled above)
   if (req.body.scheduledDeparture || req.body.scheduledArrival) {
     const scheduledDeparture = req.body.scheduledDeparture ? new Date(req.body.scheduledDeparture) : trip.scheduledDeparture;
     const scheduledArrival = req.body.scheduledArrival ? new Date(req.body.scheduledArrival) : trip.scheduledArrival;
@@ -323,19 +323,37 @@ exports.updateTrip = asyncHandler(async (req, res, next) => {
       return next(new ErrorResponse('Scheduled arrival must be after scheduled departure', 400));
     }
 
-    const vehicleAvailable = await checkVehicleAvailability(trip.vehicle, scheduledDeparture, scheduledArrival, trip._id);
+    // Only re-check original vehicle/driver if we're NOT changing vehicle/driver simultaneously
+    // (those were already checked in the blocks above)
+    const vehicleId = req.body.vehicle && req.body.vehicle !== trip.vehicle.toString()
+      ? req.body.vehicle
+      : trip.vehicle;
+    const driverId = req.body.driver && req.body.driver !== trip.driver.toString()
+      ? req.body.driver
+      : trip.driver;
+
+    const vehicleAvailable = await checkVehicleAvailability(vehicleId, scheduledDeparture, scheduledArrival, trip._id);
     if (!vehicleAvailable) {
       return next(new ErrorResponse('Vehicle is not available for the new time slot', 400));
     }
 
-    const driverAvailable = await checkDriverAvailability(trip.driver, scheduledDeparture, scheduledArrival, trip._id);
+    const driverAvailable = await checkDriverAvailability(driverId, scheduledDeparture, scheduledArrival, trip._id);
     if (!driverAvailable) {
       return next(new ErrorResponse('Driver is not available for the new time slot', 400));
     }
   }
 
+  // Whitelist updatable fields — prevent clients from directly setting internal fields
+  // like actualDeparture, actualArrival (those are set by /start, /complete actions only)
+  const allowedFields = ['route', 'vehicle', 'driver', 'scheduledDeparture', 'scheduledArrival',
+    'fare', 'notes', 'status', 'cancellationReason', 'delayReason', 'delayDuration'];
+  const safeUpdate = {};
+  allowedFields.forEach(field => {
+    if (req.body[field] !== undefined) safeUpdate[field] = req.body[field];
+  });
+
   // Update trip
-  trip = await Trip.findByIdAndUpdate(req.params.id, req.body, {
+  trip = await Trip.findByIdAndUpdate(req.params.id, safeUpdate, {
     new: true,
     runValidators: true
   }).populate([
@@ -425,6 +443,9 @@ exports.completeTrip = asyncHandler(async (req, res, next) => {
   // Validate passenger count if provided
   if (req.body.passengerCount !== undefined) {
     const vehicle = await Vehicle.findById(trip.vehicle);
+    if (!vehicle) {
+      return next(new ErrorResponse('Associated vehicle not found', 404));
+    }
     if (req.body.passengerCount > vehicle.capacity) {
       return next(new ErrorResponse('Passenger count exceeds vehicle capacity', 400));
     }
@@ -472,10 +493,13 @@ exports.cancelTrip = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse('Cancellation reason is required', 400));
   }
 
+  // Capture original status BEFORE overwriting (BUG-01 fix: dead code)
+  const wasInProgress = trip.status === 'in-progress';
+
   // Update trip
   trip.status = 'cancelled';
   trip.cancellationReason = req.body.cancellationReason;
-  if (trip.status === 'in-progress') {
+  if (wasInProgress) {
     trip.actualArrival = new Date();
   }
   await trip.save();

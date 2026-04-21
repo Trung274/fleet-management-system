@@ -1,7 +1,11 @@
 const Route = require('../models/Route.model');
 const RouteStop = require('../models/RouteStop.model');
+const Trip = require('../models/Trip.model');
 const asyncHandler = require('../utils/asyncHandler');
 const ErrorResponse = require('../utils/errorResponse');
+
+// Escape special regex characters to prevent ReDoS attacks
+const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 // @desc    Create new route
 // @route   POST /api/v1/routes
@@ -42,7 +46,7 @@ exports.getAllRoutes = asyncHandler(async (req, res, next) => {
 
   // Search across name, code, origin, and destination
   if (req.query.search) {
-    const searchRegex = new RegExp(req.query.search, 'i');
+    const searchRegex = new RegExp(escapeRegex(req.query.search), 'i');
     query.$or = [
       { name: searchRegex },
       { code: searchRegex },
@@ -141,6 +145,15 @@ exports.deleteRoute = asyncHandler(async (req, res, next) => {
 
   if (!route) {
     return next(new ErrorResponse(`Route not found with id of ${req.params.id}`, 404));
+  }
+
+  // Check for active or scheduled trips on this route before deleting
+  const activeTrip = await Trip.findOne({
+    route: req.params.id,
+    status: { $in: ['scheduled', 'in-progress', 'delayed'] }
+  });
+  if (activeTrip) {
+    return next(new ErrorResponse('Cannot delete route that has active or scheduled trips', 400));
   }
 
   // Cascade delete: remove all associated route stops

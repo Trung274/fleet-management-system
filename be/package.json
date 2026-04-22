@@ -12,7 +12,8 @@
     "seed:vehicles": "node src/config/seedVehicles.js",
     "seed:drivers": "node src/config/seedDrivers.js",
     "seed:routes": "node src/config/seedRoutes.js",
-    "seed:trips": "node src/config/seedTrips.js"
+    "seed:trips": "node src/config/seedTrips.js",
+    "seed:bookings": "node src/config/seedBookings.js"
   },
   "keywords": [
     "nodejs",

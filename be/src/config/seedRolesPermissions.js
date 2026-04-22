@@ -72,6 +72,16 @@ const seedData = async () => {
       { resource: 'trips', action: 'read', description: 'View trip details' },
       { resource: 'trips', action: 'update', description: 'Update trip information' },
       { resource: 'trips', action: 'delete', description: 'Delete trips' },
+
+      // Seat Management
+      { resource: 'seats', action: 'read', description: 'View seat map and availability' },
+      { resource: 'seats', action: 'update', description: 'Initialize seats and update seat status' },
+
+      // Booking Management
+      { resource: 'bookings', action: 'create', description: 'Create new bookings' },
+      { resource: 'bookings', action: 'read', description: 'View booking details' },
+      { resource: 'bookings', action: 'update', description: 'Confirm or cancel bookings' },
+      { resource: 'bookings', action: 'delete', description: 'Delete booking records' },
     ]);
     console.log('✓ Created permissions');
 
@@ -84,19 +94,36 @@ const seedData = async () => {
     });
     console.log('✓ Created admin role');
 
-    // 3. Tạo Manager Role (vehicle, driver, route, and trip management permissions)
+    // 3. Tạo Manager Role (full operational access + seats + bookings)
     const managerPermissions = permissions
-      .filter(p => p.resource === 'vehicles' || p.resource === 'drivers' || p.resource === 'routes' || p.resource === 'trips' || p.resource === 'profile')
+      .filter(p => ['vehicles', 'drivers', 'routes', 'trips', 'seats', 'bookings', 'profile'].includes(p.resource))
       .map(p => p._id);
 
     const managerRole = await Role.create({
       name: 'manager',
-      description: 'Manager with vehicle, driver, route, and trip management access',
+      description: 'Manager with full operational access including seat and booking management',
       permissions: managerPermissions
     });
     console.log('✓ Created manager role');
 
-    // 4. Tạo User Role (limited permissions)
+    // 4. Tạo Staff Role (seats:read + bookings:create/read/update — no delete, no seat init)
+    const staffPermissions = permissions
+      .filter(p =>
+        (p.resource === 'trips' && p.action === 'read') ||
+        (p.resource === 'seats' && p.action === 'read') ||
+        (p.resource === 'bookings' && ['create', 'read', 'update'].includes(p.action)) ||
+        p.resource === 'profile'
+      )
+      .map(p => p._id);
+
+    const staffRole = await Role.create({
+      name: 'staff',
+      description: 'Counter staff with booking management access (create, view, confirm, cancel)',
+      permissions: staffPermissions
+    });
+    console.log('✓ Created staff role');
+
+    // 5. Tạo User Role (limited permissions)
     const userPermissions = permissions
       .filter(p => p.resource === 'profile')
       .map(p => p._id);
@@ -108,27 +135,37 @@ const seedData = async () => {
     });
     console.log('✓ Created user role');
 
-    // 5. Tạo tài khoản Admin mặc định (optional)
+    // 6. Tạo tài khoản Admin mặc định
     const adminExists = await User.findOne({ email: 'admin@example.com' });
     if (!adminExists) {
       await User.create({
         name: 'System Admin',
         email: 'admin@example.com',
-        password: 'Admin@123', // Đổi password này trong production!
+        password: 'Admin@123',
         role: adminRole._id,
         isActive: true
       });
-      console.log('✓ Created default admin account');
-      console.log('  Email: admin@example.com');
-      console.log('  Password: Admin@123');
-      console.log('  ⚠️  CHANGE THIS PASSWORD IN PRODUCTION!');
+      console.log('✓ Created default admin account (admin@example.com / Admin@123)');
+    }
+
+    // 7. Tạo tài khoản Staff mặc định (dùng cho testing)
+    const staffExists = await User.findOne({ email: 'staff@example.com' });
+    if (!staffExists) {
+      await User.create({
+        name: 'Counter Staff',
+        email: 'staff@example.com',
+        password: 'Staff@123',
+        role: staffRole._id,
+        isActive: true
+      });
+      console.log('✓ Created default staff account (staff@example.com / Staff@123)');
     }
 
     console.log('\n🎉 Seed completed successfully!');
     console.log(`\n📊 Summary:`);
     console.log(`   Permissions: ${permissions.length}`);
-    console.log(`   Roles: 3 (admin, manager, user)`);
-    console.log(`   Users: ${adminExists ? 'Admin already exists' : '1 admin created'}`);
+    console.log(`   Roles: 4 (admin, manager, staff, user)`);
+    console.log(`   Users: admin + staff accounts`);
 
     process.exit(0);
   } catch (error) {

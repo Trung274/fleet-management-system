@@ -11,12 +11,28 @@ export const routes: Routes = [
       ),
   },
   {
-    path: 'dashboard',
+    path: '',
     loadComponent: () =>
-      import('./features/dashboard/dashboard.component').then(
-        (m) => m.DashboardComponent,
+      import('./features/main-layout/main-layout.component').then(
+        (m) => m.MainLayoutComponent,
       ),
     canActivate: [authGuard],
+    children: [
+      {
+        path: 'dashboard',
+        loadComponent: () =>
+          import('./features/dashboard/dashboard.component').then(
+            (m) => m.DashboardComponent,
+          ),
+      },
+      {
+        path: 'vehicles',
+        loadComponent: () =>
+          import('./features/vehicles/vehicles.component').then(
+            (m) => m.VehiclesComponent,
+          ),
+      },
+    ],
   },
   { path: '**', redirectTo: 'dashboard' },
 ];

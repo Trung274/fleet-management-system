@@ -1,0 +1,397 @@
+<!-- ── Page Header ── -->
+<div class="page-header">
+  <div class="page-title-block">
+    <h1 class="page-title">Quản lý xe</h1>
+    <p class="page-subtitle">{{ total() }} xe trong hệ thống</p>
+  </div>
+  <button id="add-vehicle-btn" class="btn-primary" (click)="openCreate()">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+    </svg>
+    Thêm xe mới
+  </button>
+</div>
+
+<!-- ── Filters Bar ── -->
+<div class="filters-bar">
+  <div class="search-box">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="search-icon">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+    </svg>
+    <input
+      id="vehicle-search"
+      type="text"
+      class="search-input"
+      placeholder="Tìm theo biển số, hãng, model…"
+      [value]="searchQuery()"
+      (input)="onSearch($any($event.target).value)"
+    />
+  </div>
+
+  <div class="filter-group">
+    <select id="status-filter" class="filter-select" [value]="filterStatus()" (change)="onFilterStatus($any($event.target).value)">
+      <option value="">Tất cả trạng thái</option>
+      @for (s of statuses; track s) {
+        <option [value]="s">{{ statusLabel(s) }}</option>
+      }
+    </select>
+  </div>
+</div>
+
+<!-- ── Table ── -->
+<div class="table-card">
+  @if (isLoading()) {
+    <div class="table-loading">
+      <div class="spinner"></div>
+      <p>Đang tải danh sách xe…</p>
+    </div>
+  } @else if (vehicles().length === 0) {
+    <div class="table-empty">
+      <div class="empty-icon">🚌</div>
+      <p class="empty-title">Chưa có xe nào</p>
+      <p class="empty-sub">Nhấn "Thêm xe mới" để bắt đầu</p>
+    </div>
+  } @else {
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Biển số</th>
+            <th>Hãng / Model</th>
+            <th>Năm SX</th>
+            <th>Sức chứa</th>
+            <th>Màu</th>
+            <th>Trạng thái</th>
+            <th>Hành động</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (v of vehicles(); track trackById($index, v)) {
+            <tr class="table-row">
+              <td>
+                <span class="reg-number">{{ v.registrationNumber }}</span>
+              </td>
+              <td>
+                <div class="vehicle-name">
+                  <span class="make">{{ v.make }}</span>
+                  <span class="model">{{ v.model }}</span>
+                </div>
+              </td>
+              <td class="text-muted">{{ v.year }}</td>
+              <td>
+                <span class="capacity-badge">{{ v.capacity }} chỗ</span>
+              </td>
+              <td class="text-muted">{{ v.color || '—' }}</td>
+              <td>
+                <span class="status-badge" [ngClass]="statusClass(v.status)">
+                  {{ statusLabel(v.status) }}
+                </span>
+              </td>
+              <td>
+                <div class="actions">
+                  <button class="action-btn view-btn" title="Xem chi tiết" (click)="openView(v)">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.964-7.178z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </button>
+                  <button class="action-btn edit-btn" title="Chỉnh sửa" (click)="openEdit(v)">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                    </svg>
+                  </button>
+                  <button
+                    class="action-btn delete-btn"
+                    title="Xóa"
+                    (click)="confirmDelete(v)"
+                    [disabled]="isDeleting() === v._id"
+                  >
+                    @if (isDeleting() === v._id) {
+                      <div class="mini-spinner"></div>
+                    } @else {
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                      </svg>
+                    }
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ── Pagination ── -->
+    @if (totalPages() > 1) {
+      <div class="pagination">
+        <button class="page-btn" [disabled]="currentPage() === 1" (click)="goToPage(currentPage() - 1)">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+          </svg>
+        </button>
+        @for (p of pageNumbers; track p) {
+          <button class="page-btn" [class.page-active]="p === currentPage()" (click)="goToPage(p)">{{ p }}</button>
+        }
+        <button class="page-btn" [disabled]="currentPage() === totalPages()" (click)="goToPage(currentPage() + 1)">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+          </svg>
+        </button>
+        <span class="pagination-info">Trang {{ currentPage() }} / {{ totalPages() }} · {{ total() }} xe</span>
+      </div>
+    }
+  }
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     Create / Edit / View Modal
+══════════════════════════════════════════════════════════ -->
+@if (isModalOpen()) {
+  <div class="modal-overlay" (click)="closeModal()">
+    <div class="modal-panel" (click)="$event.stopPropagation()">
+      <!-- Header -->
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <div class="modal-icon">🚌</div>
+          <h2 class="modal-title">
+            @switch (modalMode()) {
+              @case ('create') { Thêm xe mới }
+              @case ('edit')   { Chỉnh sửa xe }
+              @case ('view')   { Chi tiết xe }
+            }
+          </h2>
+        </div>
+        <button class="modal-close" (click)="closeModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="modal-body">
+        @if (isViewMode() && selectedVehicle(); as v) {
+          <!-- View mode -->
+          <div class="view-grid">
+            <div class="view-field">
+              <label>Biển số đăng ký</label>
+              <p class="view-value highlight">{{ v.registrationNumber }}</p>
+            </div>
+            <div class="view-field">
+              <label>Trạng thái</label>
+              <span class="status-badge" [ngClass]="statusClass(v.status)">{{ statusLabel(v.status) }}</span>
+            </div>
+            <div class="view-field">
+              <label>Hãng xe</label>
+              <p class="view-value">{{ v.make }}</p>
+            </div>
+            <div class="view-field">
+              <label>Model</label>
+              <p class="view-value">{{ v.model }}</p>
+            </div>
+            <div class="view-field">
+              <label>Năm sản xuất</label>
+              <p class="view-value">{{ v.year }}</p>
+            </div>
+            <div class="view-field">
+              <label>Sức chứa</label>
+              <p class="view-value">{{ v.capacity }} chỗ</p>
+            </div>
+            <div class="view-field">
+              <label>Màu sắc</label>
+              <p class="view-value">{{ v.color || '—' }}</p>
+            </div>
+            <div class="view-field">
+              <label>VIN</label>
+              <p class="view-value mono">{{ v.vin || '—' }}</p>
+            </div>
+            <div class="view-field full-width">
+              <label>Ghi chú</label>
+              <p class="view-value">{{ v.notes || 'Không có' }}</p>
+            </div>
+            <div class="view-field">
+              <label>Ngày tạo</label>
+              <p class="view-value">{{ v.createdAt | date:'dd/MM/yyyy HH:mm' }}</p>
+            </div>
+            <div class="view-field">
+              <label>Cập nhật lần cuối</label>
+              <p class="view-value">{{ v.updatedAt | date:'dd/MM/yyyy HH:mm' }}</p>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn-secondary" (click)="openEdit(v); isModalOpen.set(true)">
+              Chỉnh sửa
+            </button>
+            <button class="btn-primary" (click)="closeModal()">Đóng</button>
+          </div>
+        } @else {
+          <!-- Create / Edit form -->
+          <form (ngSubmit)="onSubmit()" id="vehicle-form">
+            <div class="form-grid">
+              <!-- Registration Number -->
+              <div class="form-field">
+                <label for="reg-number" class="form-label required">Biển số đăng ký</label>
+                <input
+                  id="reg-number"
+                  type="text"
+                  class="form-input"
+                  placeholder="VD: 51A-12345"
+                  [(ngModel)]="form.registrationNumber"
+                  name="registrationNumber"
+                  required
+                />
+              </div>
+
+              <!-- Status -->
+              <div class="form-field">
+                <label for="vehicle-status" class="form-label">Trạng thái</label>
+                <select id="vehicle-status" class="form-select" [(ngModel)]="form.status" name="status">
+                  @for (s of statuses; track s) {
+                    <option [value]="s">{{ statusLabel(s) }}</option>
+                  }
+                </select>
+              </div>
+
+              <!-- Make -->
+              <div class="form-field">
+                <label for="vehicle-make" class="form-label required">Hãng xe</label>
+                <input
+                  id="vehicle-make"
+                  type="text"
+                  class="form-input"
+                  placeholder="VD: Toyota"
+                  [(ngModel)]="form.make"
+                  name="make"
+                  required
+                />
+              </div>
+
+              <!-- Model -->
+              <div class="form-field">
+                <label for="vehicle-model" class="form-label required">Model</label>
+                <input
+                  id="vehicle-model"
+                  type="text"
+                  class="form-input"
+                  placeholder="VD: Coaster"
+                  [(ngModel)]="form.model"
+                  name="model"
+                  required
+                />
+              </div>
+
+              <!-- Year -->
+              <div class="form-field">
+                <label for="vehicle-year" class="form-label required">Năm sản xuất</label>
+                <input
+                  id="vehicle-year"
+                  type="number"
+                  class="form-input"
+                  [min]="1990"
+                  [max]="currentYear + 1"
+                  [(ngModel)]="form.year"
+                  name="year"
+                  required
+                />
+              </div>
+
+              <!-- Capacity -->
+              <div class="form-field">
+                <label for="vehicle-capacity" class="form-label required">Sức chứa (chỗ)</label>
+                <input
+                  id="vehicle-capacity"
+                  type="number"
+                  class="form-input"
+                  min="1"
+                  [(ngModel)]="form.capacity"
+                  name="capacity"
+                  required
+                />
+              </div>
+
+              <!-- Color -->
+              <div class="form-field">
+                <label for="vehicle-color" class="form-label">Màu sắc</label>
+                <input
+                  id="vehicle-color"
+                  type="text"
+                  class="form-input"
+                  placeholder="VD: Trắng"
+                  [(ngModel)]="form.color"
+                  name="color"
+                />
+              </div>
+
+              <!-- VIN -->
+              <div class="form-field">
+                <label for="vehicle-vin" class="form-label">Số VIN</label>
+                <input
+                  id="vehicle-vin"
+                  type="text"
+                  class="form-input"
+                  placeholder="VD: 1HGBH41JXMN109186"
+                  [(ngModel)]="form.vin"
+                  name="vin"
+                />
+              </div>
+
+              <!-- Notes -->
+              <div class="form-field full-width">
+                <label for="vehicle-notes" class="form-label">Ghi chú</label>
+                <textarea
+                  id="vehicle-notes"
+                  class="form-textarea"
+                  rows="3"
+                  placeholder="Ghi chú về xe…"
+                  [(ngModel)]="form.notes"
+                  name="notes"
+                ></textarea>
+              </div>
+            </div>
+
+            <div class="modal-footer">
+              <button type="button" class="btn-secondary" (click)="closeModal()">Hủy</button>
+              <button type="submit" class="btn-primary" [disabled]="isSubmitting()">
+                @if (isSubmitting()) {
+                  <div class="btn-spinner"></div>
+                  Đang lưu…
+                } @else {
+                  @if (modalMode() === 'create') { Thêm xe } @else { Lưu thay đổi }
+                }
+              </button>
+            </div>
+          </form>
+        }
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ══════════════════════════════════════════════════════════
+     Delete Confirm Dialog
+══════════════════════════════════════════════════════════ -->
+@if (isDeleteConfirmOpen() && vehicleToDelete(); as v) {
+  <div class="modal-overlay" (click)="cancelDelete()">
+    <div class="confirm-dialog" (click)="$event.stopPropagation()">
+      <div class="confirm-icon">⚠️</div>
+      <h3 class="confirm-title">Xác nhận xóa xe</h3>
+      <p class="confirm-desc">
+        Bạn có chắc muốn xóa xe <strong>{{ v.registrationNumber }}</strong>
+        ({{ v.make }} {{ v.model }})?<br />
+        Hành động này không thể hoàn tác.
+      </p>
+      <div class="confirm-actions">
+        <button class="btn-secondary" (click)="cancelDelete()">Hủy</button>
+        <button class="btn-danger" (click)="executeDelete()" [disabled]="isDeleting() === v._id">
+          @if (isDeleting() === v._id) {
+            <div class="btn-spinner"></div>
+            Đang xóa…
+          } @else {
+            Xóa xe
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}

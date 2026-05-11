@@ -156,6 +156,33 @@ export class AuthService {
     }
   }
 
+  // ─── Safely restore user when cookie is missing/corrupt ───────
+  // Unlike checkAuth(), this NEVER clears cookies on failure.
+  // Safe to call from layout ngOnInit after guard has already allowed through.
+  async tryLoadUser(): Promise<void> {
+    if (this._user() !== null) return; // Already loaded, no-op
+
+    const token = this.tokenStorage.getToken();
+    if (!token) return; // No token at all — guard should have blocked
+
+    try {
+      const response = await firstValueFrom(
+        this.http.get<{ success: boolean; data: User }>(`${this.apiUrl}/auth/me`),
+      );
+      const user = response.data;
+      const refreshToken = this.tokenStorage.getRefreshToken();
+
+      this._user.set(user);
+      this._token.set(token);
+      if (refreshToken) this._refreshToken.set(refreshToken);
+
+      // Re-persist user data to cookie so next load works from cookie
+      this.tokenStorage.setUser(user, !!refreshToken);
+    } catch {
+      // Silent fail — token might still be valid, interceptor handles 401s
+    }
+  }
+
   // ─── Helpers ──────────────────────────────────────────────────
   clearError(): void {
     this._error.set(null);

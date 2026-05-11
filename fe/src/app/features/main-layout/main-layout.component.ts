@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { SidebarComponent } from '../../shared/components/sidebar/sidebar.component';
 import { HeaderComponent } from '../../shared/components/header/header.component';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-main-layout',
@@ -37,4 +38,12 @@ import { HeaderComponent } from '../../shared/components/header/header.component
     }
   `],
 })
-export class MainLayoutComponent {}
+export class MainLayoutComponent implements OnInit {
+  private authService = inject(AuthService);
+
+  ngOnInit(): void {
+    // If token exists but user data wasn't restored from cookie (e.g. cookie too large,
+    // corrupt JSON, or SSR context), silently fetch from backend and re-persist.
+    this.authService.tryLoadUser();
+  }
+}

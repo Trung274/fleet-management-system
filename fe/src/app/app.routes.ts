@@ -32,6 +32,13 @@ export const routes: Routes = [
             (m) => m.VehiclesComponent,
           ),
       },
+      {
+        path: 'drivers',
+        loadComponent: () =>
+          import('./features/drivers/drivers.component').then(
+            (m) => m.DriversComponent,
+          ),
+      },
     ],
   },
   { path: '**', redirectTo: 'dashboard' },

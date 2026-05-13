@@ -76,9 +76,12 @@ const driverSchema = new mongoose.Schema({
     required: [true, 'Please provide license expiry date'],
     validate: {
       validator: function(value) {
-        return value > new Date();
+        // Compare date-only: license expiring today is still valid for today
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return value >= today;
       },
-      message: 'License expiry date must be in the future'
+      message: 'License expiry date must be today or in the future'
     }
   },
 

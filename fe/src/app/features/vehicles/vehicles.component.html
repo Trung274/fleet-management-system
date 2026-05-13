@@ -368,30 +368,15 @@
   </div>
 }
 
-<!-- ══════════════════════════════════════════════════════════
-     Delete Confirm Dialog
-══════════════════════════════════════════════════════════ -->
-@if (isDeleteConfirmOpen() && vehicleToDelete(); as v) {
-  <div class="modal-overlay" (click)="cancelDelete()">
-    <div class="confirm-dialog" (click)="$event.stopPropagation()">
-      <div class="confirm-icon">⚠️</div>
-      <h3 class="confirm-title">Xác nhận xóa xe</h3>
-      <p class="confirm-desc">
-        Bạn có chắc muốn xóa xe <strong>{{ v.registrationNumber }}</strong>
-        ({{ v.make }} {{ v.model }})?<br />
-        Hành động này không thể hoàn tác.
-      </p>
-      <div class="confirm-actions">
-        <button class="btn-secondary" (click)="cancelDelete()">Hủy</button>
-        <button class="btn-danger" (click)="executeDelete()" [disabled]="isDeleting() === v._id">
-          @if (isDeleting() === v._id) {
-            <div class="btn-spinner"></div>
-            Đang xóa…
-          } @else {
-            Xóa xe
-          }
-        </button>
-      </div>
-    </div>
-  </div>
-}
+<!-- ─── Delete Confirm Dialog (shared component) ──────────────── -->
+<app-confirm-dialog
+  [isOpen]="isDeleteConfirmOpen()"
+  [title]="'Xác nhận xóa xe'"
+  [message]="vehicleToDelete()
+    ? 'Bạn có chắc muốn xóa xe <strong>' + vehicleToDelete()!.registrationNumber + '</strong> (' + vehicleToDelete()!.make + ' ' + vehicleToDelete()!.model + ')?<br/>Hành động này không thể hoàn tác.'
+    : ''"
+  confirmLabel="Xóa xe"
+  [isLoading]="!!isDeleting()"
+  (confirmed)="executeDelete()"
+  (cancelled)="cancelDelete()"
+/>

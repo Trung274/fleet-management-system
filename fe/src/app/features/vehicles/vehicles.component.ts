@@ -9,13 +9,14 @@ import {
   VehicleCreatePayload,
   VehicleUpdatePayload,
 } from '../../core/models/vehicle.model';
+import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 
 type ModalMode = 'create' | 'edit' | 'view';
 
 @Component({
   selector: 'app-vehicles',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ConfirmDialogComponent],
   templateUrl: './vehicles.component.html',
   styleUrl: './vehicles.component.css',
 })

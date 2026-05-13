@@ -1,0 +1,330 @@
+<!-- ─── Page Header ─────────────────────────────────────────────── -->
+<div class="page-header">
+  <div class="page-header-left">
+    <h1 class="page-title">Quản Lý Tài Xế</h1>
+    <p class="page-subtitle">{{ total() }} tài xế trong hệ thống</p>
+  </div>
+  <button id="add-driver-btn" class="btn btn-primary" (click)="openCreateModal()">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+    </svg>
+    Thêm Tài Xế
+  </button>
+</div>
+
+<!-- ─── Filters ──────────────────────────────────────────────────── -->
+<div class="filter-bar">
+  <div class="search-wrap">
+    <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+    </svg>
+    <input
+      id="driver-search"
+      class="search-input"
+      type="text"
+      placeholder="Tìm theo tên, email, số GPLX..."
+      [value]="searchQuery()"
+      (input)="onSearch($any($event.target).value)"
+    />
+  </div>
+
+  <select id="status-filter" class="filter-select" [value]="statusFilter()" (change)="onStatusFilter($any($event.target).value)">
+    <option value="">Tất cả trạng thái</option>
+    <option value="active">Đang làm việc</option>
+    <option value="on-leave">Nghỉ phép</option>
+    <option value="suspended">Tạm đình chỉ</option>
+    <option value="terminated">Đã nghỉ việc</option>
+  </select>
+
+  <select id="license-type-filter" class="filter-select" [value]="licenseTypeFilter()" (change)="onLicenseTypeFilter($any($event.target).value)">
+    <option value="">Tất cả hạng GPLX</option>
+    <option value="Class A">Class A</option>
+    <option value="Class B">Class B</option>
+    <option value="Class C">Class C</option>
+  </select>
+</div>
+
+<!-- ─── Table ────────────────────────────────────────────────────── -->
+<div class="table-card">
+  @if (isLoading()) {
+    <div class="loading-overlay">
+      <div class="spinner"></div>
+      <p>Đang tải...</p>
+    </div>
+  } @else if (drivers().length === 0) {
+    <div class="empty-state">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+      </svg>
+      <p>Không có tài xế nào</p>
+      <button class="btn btn-primary" (click)="openCreateModal()">Thêm tài xế đầu tiên</button>
+    </div>
+  } @else {
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Tài Xế</th>
+            <th>Liên Hệ</th>
+            <th>GPLX</th>
+            <th>Hạn GPLX</th>
+            <th>Trạng Thái</th>
+            <th>Ngày Vào Làm</th>
+            <th class="col-actions">Thao Tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (driver of drivers(); track driver._id) {
+            <tr class="table-row">
+              <td>
+                <div class="driver-info">
+                  <div class="driver-avatar">{{ driver.firstName[0] }}{{ driver.lastName[0] }}</div>
+                  <div>
+                    <p class="driver-name">{{ driver.firstName }} {{ driver.lastName }}</p>
+                    <p class="driver-email">{{ driver.email }}</p>
+                  </div>
+                </div>
+              </td>
+              <td class="text-muted">{{ driver.phone }}</td>
+              <td>
+                <span class="license-badge">{{ driver.licenseType }}</span>
+                <p class="text-muted small">{{ driver.licenseNumber }}</p>
+              </td>
+              <td class="text-muted">{{ formatDate(driver.licenseExpiry) }}</td>
+              <td>
+                <span class="status-badge" [class]="'status-' + driver.employmentStatus">
+                  {{ getStatusLabel(driver.employmentStatus) }}
+                </span>
+              </td>
+              <td class="text-muted">{{ formatDate(driver.hireDate) }}</td>
+              <td class="col-actions">
+                <div class="action-btns">
+                  <button class="action-btn btn-view" title="Xem chi tiết" (click)="openViewModal(driver)">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </button>
+                  <button class="action-btn btn-edit" title="Chỉnh sửa" (click)="openEditModal(driver)">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+                    </svg>
+                  </button>
+                  <button
+                    class="action-btn btn-delete"
+                    title="Xóa"
+                    [disabled]="isDeleting() === driver._id"
+                    (click)="confirmDelete(driver)"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                    </svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    @if (totalPages() > 1) {
+      <div class="pagination">
+        <button class="page-btn" [disabled]="currentPage() === 1" (click)="goToPage(currentPage() - 1)">‹</button>
+        @for (page of pages(); track page) {
+          <button
+            class="page-btn"
+            [class.active]="page === currentPage()"
+            (click)="goToPage(page)"
+          >{{ page }}</button>
+        }
+        <button class="page-btn" [disabled]="currentPage() === totalPages()" (click)="goToPage(currentPage() + 1)">›</button>
+      </div>
+    }
+  }
+</div>
+
+<!-- ─── Modal Create/Edit/View ────────────────────────────────────── -->
+@if (modalOpen()) {
+  <div class="modal-backdrop" (click)="closeModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <!-- Header -->
+      <div class="modal-header">
+        <h2 class="modal-title">{{ modalTitle() }}</h2>
+        <button class="modal-close" (click)="closeModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="modal-body">
+        <form id="driver-form" (ngSubmit)="onSubmit()">
+
+          <!-- Section: Thông tin cá nhân -->
+          <div class="form-section">
+            <h3 class="form-section-title">Thông Tin Cá Nhân</h3>
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label class="form-label">Họ <span class="required">*</span></label>
+                <input class="form-input" type="text" placeholder="Nguyễn"
+                  [value]="form().firstName" [disabled]="isViewMode()"
+                  (input)="updateFormField('firstName', $any($event.target).value)"
+                  required />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Tên <span class="required">*</span></label>
+                <input class="form-input" type="text" placeholder="Văn A"
+                  [value]="form().lastName" [disabled]="isViewMode()"
+                  (input)="updateFormField('lastName', $any($event.target).value)"
+                  required />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Email <span class="required">*</span></label>
+                <input class="form-input" type="email" placeholder="driver@email.com"
+                  [value]="form().email" [disabled]="isViewMode()"
+                  (input)="updateFormField('email', $any($event.target).value)"
+                  required />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Số Điện Thoại <span class="required">*</span></label>
+                <input class="form-input" type="text" placeholder="0901234567"
+                  [value]="form().phone" [disabled]="isViewMode()"
+                  (input)="updateFormField('phone', $any($event.target).value)"
+                  required />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Ngày Sinh</label>
+                <input class="form-input" type="date"
+                  [value]="form().dateOfBirth" [disabled]="isViewMode()"
+                  [max]="maxDateOfBirth"
+                  (input)="updateFormField('dateOfBirth', $any($event.target).value)" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Địa Chỉ</label>
+                <input class="form-input" type="text" placeholder="123 Đường ABC, TP.HCM"
+                  [value]="form().address" [disabled]="isViewMode()"
+                  (input)="updateFormField('address', $any($event.target).value)" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Section: GPLX -->
+          <div class="form-section">
+            <h3 class="form-section-title">Giấy Phép Lái Xe</h3>
+            <div class="form-grid-3">
+              <div class="form-group">
+                <label class="form-label">Số GPLX <span class="required">*</span></label>
+                <input class="form-input" type="text" placeholder="DL123456"
+                  [value]="form().licenseNumber" [disabled]="isViewMode()"
+                  (input)="updateFormField('licenseNumber', $any($event.target).value)"
+                  required />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Hạng GPLX <span class="required">*</span></label>
+                <select class="form-input" [disabled]="isViewMode()"
+                  [value]="form().licenseType"
+                  (change)="updateFormField('licenseType', $any($event.target).value)">
+                  @for (type of licenseTypes; track type) {
+                    <option [value]="type">{{ type }}</option>
+                  }
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Hạn GPLX <span class="required">*</span></label>
+                <input class="form-input" type="date"
+                  [value]="form().licenseExpiry" [disabled]="isViewMode()"
+                  [min]="minLicenseExpiry"
+                  (input)="updateFormField('licenseExpiry', $any($event.target).value)"
+                  required />
+              </div>
+            </div>
+          </div>
+
+          <!-- Section: Thông tin việc làm -->
+          <div class="form-section">
+            <h3 class="form-section-title">Thông Tin Việc Làm</h3>
+            <div class="form-grid-3">
+              <div class="form-group">
+                <label class="form-label">Trạng Thái</label>
+                <select class="form-input" [disabled]="isViewMode()"
+                  [value]="form().employmentStatus"
+                  (change)="updateFormField('employmentStatus', $any($event.target).value)">
+                  @for (s of employmentStatuses; track s.value) {
+                    <option [value]="s.value">{{ s.label }}</option>
+                  }
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Ngày Vào Làm</label>
+                <input class="form-input" type="date"
+                  [value]="form().hireDate" [disabled]="isViewMode()"
+                  (input)="updateFormField('hireDate', $any($event.target).value)" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Ghi Chú</label>
+                <input class="form-input" type="text" placeholder="Ghi chú thêm..."
+                  [value]="form().notes" [disabled]="isViewMode()"
+                  (input)="updateFormField('notes', $any($event.target).value)" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Section: Liên hệ khẩn cấp -->
+          <div class="form-section">
+            <h3 class="form-section-title">Liên Hệ Khẩn Cấp</h3>
+            <div class="form-grid-3">
+              <div class="form-group">
+                <label class="form-label">Họ tên</label>
+                <input class="form-input" type="text" placeholder="Tên người liên hệ"
+                  [value]="form().emergencyContact?.name ?? ''" [disabled]="isViewMode()"
+                  (input)="updateEmergencyField('name', $any($event.target).value)" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Số điện thoại</label>
+                <input class="form-input" type="text" placeholder="09xxxxxxxx"
+                  [value]="form().emergencyContact?.phone ?? ''" [disabled]="isViewMode()"
+                  (input)="updateEmergencyField('phone', $any($event.target).value)" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Quan hệ</label>
+                <input class="form-input" type="text" placeholder="Vợ/Chồng, Bố/Mẹ..."
+                  [value]="form().emergencyContact?.relationship ?? ''" [disabled]="isViewMode()"
+                  (input)="updateEmergencyField('relationship', $any($event.target).value)" />
+              </div>
+            </div>
+          </div>
+
+        </form>
+      </div>
+
+      <!-- Footer -->
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeModal()">
+          {{ isViewMode() ? 'Đóng' : 'Hủy' }}
+        </button>
+        @if (!isViewMode()) {
+          <button class="btn btn-primary" form="driver-form" type="submit" [disabled]="isSubmitting()">
+            @if (isSubmitting()) { <span class="spinner-sm"></span> }
+            {{ modalMode() === 'create' ? 'Thêm Tài Xế' : 'Lưu Thay Đổi' }}
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ─── Delete Confirm Dialog (shared component) ──────────────── -->
+<app-confirm-dialog
+  [isOpen]="deleteConfirmOpen()"
+  [title]="'Xóa tài xế?'"
+  [message]="driverToDelete()
+    ? 'Bạn có chắc muốn xóa tài xế <strong>' + driverToDelete()!.firstName + ' ' + driverToDelete()!.lastName + '</strong>?<br/>Hành động này không thể hoàn tác.'
+    : ''"
+  confirmLabel="Xóa tài xế"
+  [isLoading]="!!isDeleting()"
+  (confirmed)="executeDelete()"
+  (cancelled)="cancelDelete()"
+/>

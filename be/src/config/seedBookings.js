@@ -4,6 +4,7 @@ const connectDB = require('../config/database');
 const Trip = require('../models/Trip.model');
 const Seat = require('../models/Seat.model');
 const Booking = require('../models/Booking.model');
+const Vehicle = require('../models/Vehicle.model');
 
 connectDB();
 
@@ -57,7 +58,7 @@ const seedBookings = async () => {
         trip: trips[0]._id,
         seat: trip1Seats[0]._id,
         passenger: {
-          name: 'Nguyen Van An',
+          name: 'Nguyễn Văn An',
           phone: '0901111111',
           email: 'van.an@example.com',
           idNumber: '012345678901'
@@ -73,7 +74,7 @@ const seedBookings = async () => {
         trip: trips[0]._id,
         seat: trip1Seats[1]._id,
         passenger: {
-          name: 'Tran Thi Bich',
+          name: 'Trần Thị Bích',
           phone: '0902222222',
           email: 'thi.bich@example.com'
         },
@@ -87,14 +88,14 @@ const seedBookings = async () => {
         trip: trips[0]._id,
         seat: trip1Seats[2]._id,
         passenger: {
-          name: 'Le Van Cuong',
+          name: 'Lê Văn Cường',
           phone: '0903333333'
         },
         fare: trips[0].fare || 150000,
         status: 'cancelled',
         bookedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
         cancelledAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-        cancellationReason: 'Passenger changed travel plans'
+        cancellationReason: 'Hành khách thay đổi lịch trình'
       });
 
       // Update seat statuses to match bookings
@@ -113,7 +114,7 @@ const seedBookings = async () => {
           trip: trips[1]._id,
           seat: trip2Seats[0]._id,
           passenger: {
-            name: 'Pham Thi Dung',
+            name: 'Phạm Thị Dung',
             phone: '0904444444',
             email: 'thi.dung@example.com',
             idNumber: '098765432109'
@@ -129,7 +130,7 @@ const seedBookings = async () => {
           trip: trips[1]._id,
           seat: trip2Seats[1]._id,
           passenger: {
-            name: 'Hoang Minh Em',
+            name: 'Hoàng Minh Em',
             phone: '0905555555'
           },
           fare: trips[1].fare || 120000,

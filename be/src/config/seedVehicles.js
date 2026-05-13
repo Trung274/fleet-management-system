@@ -21,70 +21,70 @@ const seedVehicles = async () => {
     // Sample vehicle data
     const vehicles = await Vehicle.insertMany([
       {
-        registrationNumber: 'BUS-001',
-        make: 'Mercedes-Benz',
-        model: 'Sprinter',
+        registrationNumber: '29B-123.45',
+        make: 'Thaco',
+        model: 'Mobihome',
         year: 2022,
-        capacity: 20,
+        capacity: 40,
         status: 'active',
-        color: 'White',
+        color: 'Trắng',
         vin: '1HGBH41JXMN109186',
-        notes: 'Primary city route vehicle'
+        notes: 'Xe giường nằm tuyến đường dài'
       },
       {
-        registrationNumber: 'BUS-002',
-        make: 'Volvo',
-        model: 'B8R',
+        registrationNumber: '30F-987.65',
+        make: 'Hyundai',
+        model: 'Universe',
         year: 2021,
         capacity: 45,
         status: 'active',
-        color: 'Blue',
+        color: 'Xanh dương',
         vin: '2HGBH41JXMN109187',
-        notes: 'Long-distance route vehicle'
+        notes: 'Xe khách chất lượng cao'
       },
       {
-        registrationNumber: 'BUS-003',
-        make: 'Scania',
-        model: 'Touring',
+        registrationNumber: '15B-456.78',
+        make: 'Samco',
+        model: 'Felix',
         year: 2023,
-        capacity: 50,
+        capacity: 29,
         status: 'maintenance',
-        color: 'Red',
+        color: 'Đỏ',
         vin: '3HGBH41JXMN109188',
-        notes: 'Scheduled maintenance - brake system check'
+        notes: 'Đang bảo dưỡng định kỳ - kiểm tra phanh'
       },
       {
-        registrationNumber: 'BUS-004',
-        make: 'MAN',
-        model: 'Lion\'s Coach',
+        registrationNumber: '14B-321.09',
+        make: 'Thaco',
+        model: 'County',
         year: 2020,
-        capacity: 55,
+        capacity: 29,
         status: 'out-of-service',
-        color: 'Silver',
+        color: 'Bạc',
         vin: '4HGBH41JXMN109189',
-        notes: 'Awaiting parts for engine repair'
+        notes: 'Đang chờ phụ tùng sửa chữa động cơ'
       },
       {
-        registrationNumber: 'BUS-005',
-        make: 'Isuzu',
-        model: 'Novo Ultra',
+        registrationNumber: '29B-555.55',
+        make: 'Ford',
+        model: 'Transit',
         year: 2019,
-        capacity: 30,
+        capacity: 16,
         status: 'active',
-        color: 'Green',
+        color: 'Xám',
         vin: '5HGBH41JXMN109190',
-        notes: 'Suburban route vehicle'
+        notes: 'Xe Limousine tuyến ngắn'
       },
       {
-        registrationNumber: 'BUS-006',
-        make: 'Mercedes-Benz',
-        model: 'Citaro',
+        registrationNumber: '30E-111.22',
+        make: 'Toyota',
+        model: 'Hiace',
         year: 2015,
-        capacity: 40,
+        capacity: 15,
         status: 'retired',
-        color: 'Yellow',
+        color: 'Vàng',
         vin: '6HGBH41JXMN109191',
-        notes: 'Retired due to age and high mileage'
+        notes: 'Đã thanh lý do hết niên hạn sử dụng'
       }
     ]);
 

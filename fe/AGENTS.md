@@ -448,3 +448,108 @@ CORS_ORIGIN=http://localhost:3000,http://localhost:4200
 ```
 
 Nếu thêm port mới, cập nhật `CORS_ORIGIN` và **restart BE**.
+
+---
+
+## Shared UI Components
+
+### `SearchInputComponent` — `shared/components/search-input/`
+
+Thanh tìm kiếm dùng chung cho tất cả các trang. **Bắt buộc sử dụng thay vì viết inline search box**.
+
+**API:**
+| Input/Output | Kiểu | Mô tả |
+|---|---|---|
+| `@Input() placeholder` | `string` | Placeholder text |
+| `@Input() value` | `string` | Giá trị hiện tại (bind từ signal) |
+| `@Input() inputId` | `string` | ID của `<input>` để label/test targeting |
+| `@Output() search` | `EventEmitter<string>` | Emit khi user gõ hoặc bấm nút xóa |
+
+**Cách dùng:**
+```html
+<app-search-input
+  inputId="vehicle-search"
+  placeholder="Tìm theo biển số..."
+  [value]="searchQuery()"
+  (search)="onSearch($event)"
+/>
+```
+
+**Lưu ý:**
+- Search của **Vehicles / Drivers / Routes** gọi API (server-side, có debounce qua `loadXxx()`).
+- Search của **Trips** là **client-side filter** vì backend `/trips` không có param `search`. Dùng `computed(() => trips().filter(...))` và render `filteredTrips()` thay vì `trips()` trong template.
+- Component tự bao gồm nút "×" để xóa query, không cần xử lý thêm ở parent.
+
+---
+
+### `ActionMenuComponent` — `shared/components/action-menu/`
+
+Menu ba chấm (⋮) dùng chung cho cột "Thao Tác" trong bảng. **Bắt buộc sử dụng thay vì render nhiều icon button riêng lẻ**.
+
+**API:**
+| Input | Kiểu | Mô tả |
+|---|---|---|
+| `@Input() actions` | `MenuAction[]` | Danh sách action items |
+
+**Interface `MenuAction`:**
+```typescript
+export interface MenuAction {
+  label: string;
+  iconPaths: string[];   // SVG <path d="..."> — hỗ trợ nhiều path (eye = 2 paths)
+  color?: 'default' | 'warning' | 'danger' | 'success' | 'info';
+  disabled?: boolean;
+  action: () => void;
+}
+```
+
+**Cách dùng:**
+```typescript
+// Trong component TS — khai báo icon paths là readonly class fields
+readonly EYE   = ['M2.036 12.322...', 'M15 12a3 3 0 11-6 0 3 3 0 016 0z'];
+readonly EDIT  = ['M16.862 4.487...'];
+readonly TRASH = ['M14.74 9l-.346 9...'];
+
+getActions(item: MyModel): MenuAction[] {
+  const all: MenuAction[] = [   // ← BẮT BUỘC type rõ ràng để tránh TS2322
+    { label: 'Xem chi tiết', iconPaths: this.EYE,   action: () => this.openView(item) },
+    { label: 'Chỉnh sửa',   iconPaths: this.EDIT,  color: 'warning', action: () => this.openEdit(item) },
+    { label: 'Xóa',         iconPaths: this.TRASH, color: 'danger',  action: () => this.confirmDelete(item) },
+  ];
+  return all; // hoặc all.filter(...) nếu cần ẩn item theo điều kiện
+}
+```
+
+```html
+<!-- Trong template -->
+<td style="text-align:right; padding-right:.75rem">
+  <app-action-menu [actions]="getActions(item)" />
+</td>
+```
+
+> ⚠️ **TS2322 Gotcha**: Khi dùng `.filter()` trên array literal, TypeScript widening `color` thành `string`. Fix bằng cách khai báo `const all: MenuAction[] = [...]` trước khi `.filter()`.
+
+---
+
+### `AddButtonComponent` — `shared/components/add-button/`
+
+Nút thêm mới (gradient xanh, icon +) dùng chung ở header của mọi trang. **Bắt buộc sử dụng thay vì viết inline button**.
+
+**API:**
+| Input/Output | Kiểu | Mô tả |
+|---|---|---|
+| `@Input() label` | `string` | Text hiển thị trong button (default: `'Thêm mới'`) |
+| `@Input() buttonId` | `string` | `id` attribute của button (dùng cho e2e test) |
+| `@Output() clicked` | `EventEmitter<void>` | Emit khi click |
+
+**Cách dùng:**
+```html
+<app-add-button
+  buttonId="add-vehicle-btn"
+  label="Thêm xe mới"
+  (clicked)="openCreate()"
+/>
+```
+
+**Lưu ý:**
+- Style gradient (`#3b82f6 → #6366f1`) được đóng gói trong component, không phụ thuộc vào CSS của trang cha.
+- Đặt bên trong `<div class="page-header">` cạnh khối tiêu đề trang (`.page-title` / `.page-subtitle`).

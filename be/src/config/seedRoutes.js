@@ -23,59 +23,59 @@ const seedRoutes = async () => {
     // Create routes
     const routes = await Route.insertMany([
       {
-        name: 'Downtown Express',
-        code: 'RT-001',
-        description: 'Express route connecting downtown business district to residential areas',
-        origin: 'Central Station',
-        destination: 'Northside Terminal',
-        distance: 25.5,
+        name: 'Hà Nội - Hải Phòng (Cao tốc)',
+        code: 'HN-HP-01',
+        description: 'Tuyến xe khách chạy thẳng cao tốc Hà Nội - Hải Phòng',
+        origin: 'Bến xe Gia Lâm',
+        destination: 'Bến xe Niệm Nghĩa',
+        distance: 120.5,
         status: 'active',
         serviceType: 'express',
+        estimatedDuration: 90
+      },
+      {
+        name: 'Hà Nội - Thái Bình (Quốc lộ 10)',
+        code: 'HN-TB-01',
+        description: 'Tuyến xe khách chạy theo tuyến Quốc lộ 10, đỗ nhiều điểm',
+        origin: 'Bến xe Giáp Bát',
+        destination: 'Bến xe Thái Bình',
+        distance: 110.3,
+        status: 'active',
+        serviceType: 'local',
+        estimatedDuration: 180
+      },
+      {
+        name: 'Hà Nội - Sân bay Nội Bài',
+        code: 'HN-NB-01',
+        description: 'Tuyến xe bus trung chuyển sân bay trực tiếp',
+        origin: 'Ga Hà Nội',
+        destination: 'Sân bay Quốc tế Nội Bài',
+        distance: 30.0,
+        status: 'active',
+        serviceType: 'shuttle',
         estimatedDuration: 45
       },
       {
-        name: 'Eastside Local',
-        code: 'RT-002',
-        description: 'Local route serving eastside neighborhoods with frequent stops',
-        origin: 'East Plaza',
-        destination: 'Riverside Mall',
-        distance: 18.3,
-        status: 'active',
-        serviceType: 'local',
-        estimatedDuration: 60
-      },
-      {
-        name: 'Airport Shuttle',
-        code: 'RT-003',
-        description: 'Direct shuttle service between downtown and airport',
-        origin: 'City Center',
-        destination: 'International Airport',
-        distance: 32.0,
-        status: 'active',
-        serviceType: 'shuttle',
-        estimatedDuration: 40
-      },
-      {
-        name: 'Westside Loop',
-        code: 'RT-004',
-        description: 'Circular route covering western suburbs',
-        origin: 'West Station',
-        destination: 'West Station',
-        distance: 28.7,
+        name: 'Hà Nội - Sa Pa (Giường nằm)',
+        code: 'HN-SP-01',
+        description: 'Tuyến du lịch giường nằm chất lượng cao',
+        origin: 'Bến xe Mỹ Đình',
+        destination: 'Bến xe Sa Pa',
+        distance: 315.7,
         status: 'under-maintenance',
         serviceType: 'local',
-        estimatedDuration: 75
+        estimatedDuration: 360
       },
       {
-        name: 'Old Highway Route',
-        code: 'RT-005',
-        description: 'Legacy route discontinued due to new highway construction',
-        origin: 'South Terminal',
-        destination: 'North Terminal',
-        distance: 45.2,
+        name: 'Hà Nội - Hải Phòng (QL5 cũ)',
+        code: 'HN-HP-02',
+        description: 'Tuyến xe khách qua QL5 cũ, đã ngừng hoạt động',
+        origin: 'Bến xe Gia Lâm',
+        destination: 'Bến xe Tam Bạc',
+        distance: 105.2,
         status: 'discontinued',
         serviceType: 'express',
-        estimatedDuration: 90,
+        estimatedDuration: 150,
         discontinuedDate: new Date('2025-12-31')
       }
     ]);
@@ -85,232 +85,232 @@ const seedRoutes = async () => {
     // Create route stops for each route
     const routeStops = [];
 
-    // Stops for RT-001 (Downtown Express) - times in minutes from midnight
+    // Stops for HN-HP-01 (Hà Nội - Hải Phòng Cao tốc)
     routeStops.push(
       {
         route: routes[0]._id,
-        stopName: 'Central Station',
-        stopCode: 'CS-001',
-        address: '100 Main Street, Downtown',
+        stopName: 'Bến xe Gia Lâm',
+        stopCode: 'GL-01',
+        address: 'Số 9 Ngô Gia Khảm, Ngọc Lâm, Long Biên, Hà Nội',
         sequence: 1,
         distanceFromStart: 0,
         estimatedArrivalTime: 480,  // 08:00
         estimatedDepartureTime: 480,
-        coordinates: { latitude: 40.7128, longitude: -74.0060 }
+        coordinates: { latitude: 21.0475, longitude: 105.8770 }
       },
       {
         route: routes[0]._id,
-        stopName: 'Business District Hub',
-        stopCode: 'BDH-001',
-        address: '500 Commerce Ave, Downtown',
+        stopName: 'Nút giao Vành đai 3',
+        stopCode: 'VD3-01',
+        address: 'Đường dẫn cao tốc Hà Nội - Hải Phòng',
         sequence: 2,
-        distanceFromStart: 5.2,
-        estimatedArrivalTime: 492,  // 08:12
-        estimatedDepartureTime: 494,  // 08:14
-        coordinates: { latitude: 40.7200, longitude: -74.0100 }
+        distanceFromStart: 8.5,
+        estimatedArrivalTime: 500,  // 08:20
+        estimatedDepartureTime: 502,
+        coordinates: { latitude: 21.0180, longitude: 105.9220 }
       },
       {
         route: routes[0]._id,
-        stopName: 'Midtown Plaza',
-        stopCode: 'MP-001',
-        address: '1200 Park Avenue, Midtown',
+        stopName: 'Trạm dừng nghỉ V52 Hải Dương',
+        stopCode: 'V52-01',
+        address: 'Km52 Cao tốc Hà Nội - Hải Phòng, Gia Lộc, Hải Dương',
         sequence: 3,
-        distanceFromStart: 12.8,
-        estimatedArrivalTime: 505,  // 08:25
-        estimatedDepartureTime: 507,  // 08:27
-        coordinates: { latitude: 40.7350, longitude: -74.0200 }
+        distanceFromStart: 52.0,
+        estimatedArrivalTime: 540,  // 09:00
+        estimatedDepartureTime: 550,  // 09:10
+        coordinates: { latitude: 20.8400, longitude: 106.3100 }
       },
       {
         route: routes[0]._id,
-        stopName: 'Northside Terminal',
-        stopCode: 'NT-001',
-        address: '2000 North Street, Northside',
+        stopName: 'Bến xe Niệm Nghĩa',
+        stopCode: 'NN-01',
+        address: '275 Trần Nguyên Hãn, Niệm Nghĩa, Lê Chân, Hải Phòng',
         sequence: 4,
-        distanceFromStart: 25.5,
-        estimatedArrivalTime: 525,  // 08:45
-        estimatedDepartureTime: 525,
-        coordinates: { latitude: 40.7580, longitude: -74.0350 }
+        distanceFromStart: 120.5,
+        estimatedArrivalTime: 590,  // 09:50
+        estimatedDepartureTime: 590,
+        coordinates: { latitude: 20.8520, longitude: 106.6710 }
       }
     );
 
-    // Stops for RT-002 (Eastside Local) - times in minutes from midnight
+    // Stops for HN-TB-01 (Hà Nội - Thái Bình QL10)
     routeStops.push(
       {
         route: routes[1]._id,
-        stopName: 'East Plaza',
-        stopCode: 'EP-001',
-        address: '300 East Boulevard, Eastside',
+        stopName: 'Bến xe Giáp Bát',
+        stopCode: 'GB-01',
+        address: 'Km6 Đường Giải Phóng, Giáp Bát, Hoàng Mai, Hà Nội',
         sequence: 1,
         distanceFromStart: 0,
         estimatedArrivalTime: 540,  // 09:00
         estimatedDepartureTime: 540,
-        coordinates: { latitude: 40.7100, longitude: -73.9800 }
+        coordinates: { latitude: 20.9850, longitude: 105.8420 }
       },
       {
         route: routes[1]._id,
-        stopName: 'Eastside Mall',
-        stopCode: 'EM-001',
-        address: '800 Shopping Center Drive, Eastside',
+        stopName: 'Phủ Lý',
+        stopCode: 'PL-01',
+        address: 'Quốc lộ 1A, Phủ Lý, Hà Nam',
         sequence: 2,
-        distanceFromStart: 6.5,
-        estimatedArrivalTime: 560,  // 09:20
-        estimatedDepartureTime: 562,  // 09:22
-        coordinates: { latitude: 40.7150, longitude: -73.9700 }
+        distanceFromStart: 60.5,
+        estimatedArrivalTime: 615,  // 10:15
+        estimatedDepartureTime: 620,
+        coordinates: { latitude: 20.5450, longitude: 105.9120 }
       },
       {
         route: routes[1]._id,
-        stopName: 'Riverside Park',
-        stopCode: 'RP-001',
-        address: '1500 River Road, Eastside',
+        stopName: 'Nam Định',
+        stopCode: 'ND-01',
+        address: 'Quốc lộ 10, Lộc Hòa, Nam Định',
         sequence: 3,
-        distanceFromStart: 12.0,
-        estimatedArrivalTime: 578,  // 09:38
-        estimatedDepartureTime: 580,  // 09:40
-        coordinates: { latitude: 40.7220, longitude: -73.9600 }
+        distanceFromStart: 90.0,
+        estimatedArrivalTime: 660,  // 11:00
+        estimatedDepartureTime: 665,
+        coordinates: { latitude: 20.4350, longitude: 106.1600 }
       },
       {
         route: routes[1]._id,
-        stopName: 'Riverside Mall',
-        stopCode: 'RM-001',
-        address: '2200 Riverside Avenue, Eastside',
+        stopName: 'Bến xe Thái Bình',
+        stopCode: 'TB-01',
+        address: 'Đường Tỉnh 39A, Hoàng Diệu, Thái Bình',
         sequence: 4,
-        distanceFromStart: 18.3,
-        estimatedArrivalTime: 600,  // 10:00
-        estimatedDepartureTime: 600,
-        coordinates: { latitude: 40.7300, longitude: -73.9500 }
+        distanceFromStart: 110.3,
+        estimatedArrivalTime: 720,  // 12:00
+        estimatedDepartureTime: 720,
+        coordinates: { latitude: 20.4500, longitude: 106.3350 }
       }
     );
 
-    // Stops for RT-003 (Airport Shuttle) - times in minutes from midnight
+    // Stops for HN-NB-01 (Hà Nội - Sân bay Nội Bài)
     routeStops.push(
       {
         route: routes[2]._id,
-        stopName: 'City Center',
-        stopCode: 'CC-001',
-        address: '50 City Plaza, Downtown',
+        stopName: 'Ga Hà Nội',
+        stopCode: 'GHN-01',
+        address: '120 Lê Duẩn, Hoàn Kiếm, Hà Nội',
         sequence: 1,
         distanceFromStart: 0,
         estimatedArrivalTime: 360,  // 06:00
         estimatedDepartureTime: 360,
-        coordinates: { latitude: 40.7150, longitude: -74.0080 }
+        coordinates: { latitude: 21.0250, longitude: 105.8400 }
       },
       {
         route: routes[2]._id,
-        stopName: 'Highway Junction',
-        stopCode: 'HJ-001',
-        address: 'Interstate 95 Exit 12',
+        stopName: 'Điểm trung chuyển Cầu Giấy',
+        stopCode: 'CG-01',
+        address: 'Đường Cầu Giấy, Ngọc Khánh, Ba Đình, Hà Nội',
         sequence: 2,
-        distanceFromStart: 15.0,
+        distanceFromStart: 7.5,
         estimatedArrivalTime: 380,  // 06:20
-        estimatedDepartureTime: 382,  // 06:22
-        coordinates: { latitude: 40.7400, longitude: -74.0500 }
+        estimatedDepartureTime: 382,
+        coordinates: { latitude: 21.0300, longitude: 105.8050 }
       },
       {
         route: routes[2]._id,
-        stopName: 'International Airport',
-        stopCode: 'IA-001',
-        address: '1 Airport Drive, Airport District',
+        stopName: 'Sân bay Quốc tế Nội Bài',
+        stopCode: 'NBA-01',
+        address: 'Phú Minh, Sóc Sơn, Hà Nội',
         sequence: 3,
-        distanceFromStart: 32.0,
-        estimatedArrivalTime: 400,  // 06:40
-        estimatedDepartureTime: 400,
-        coordinates: { latitude: 40.7700, longitude: -74.0900 }
+        distanceFromStart: 30.0,
+        estimatedArrivalTime: 405,  // 06:45
+        estimatedDepartureTime: 405,
+        coordinates: { latitude: 21.2180, longitude: 105.8040 }
       }
     );
 
-    // Stops for RT-004 (Westside Loop) - times in minutes from midnight
+    // Stops for HN-SP-01 (Hà Nội - Sa Pa)
     routeStops.push(
       {
         route: routes[3]._id,
-        stopName: 'West Station',
-        stopCode: 'WS-001',
-        address: '400 West Avenue, Westside',
+        stopName: 'Bến xe Mỹ Đình',
+        stopCode: 'MD-01',
+        address: '20 Phạm Hùng, Mỹ Đình, Nam Từ Liêm, Hà Nội',
         sequence: 1,
         distanceFromStart: 0,
-        estimatedArrivalTime: 600,  // 10:00
-        estimatedDepartureTime: 600,
-        coordinates: { latitude: 40.7050, longitude: -74.0400 }
+        estimatedArrivalTime: 1200,  // 20:00
+        estimatedDepartureTime: 1200,
+        coordinates: { latitude: 21.0280, longitude: 105.7780 }
       },
       {
         route: routes[3]._id,
-        stopName: 'Suburban Center',
-        stopCode: 'SC-001',
-        address: '1000 Suburban Road, West Suburbs',
+        stopName: 'Nút giao IC4 (Nội Bài)',
+        stopCode: 'IC4-01',
+        address: 'Đường cao tốc Nội Bài - Lào Cai',
         sequence: 2,
-        distanceFromStart: 8.5,
-        estimatedArrivalTime: 622,  // 10:22
-        estimatedDepartureTime: 624,  // 10:24
-        coordinates: { latitude: 40.6950, longitude: -74.0600 }
+        distanceFromStart: 25.5,
+        estimatedArrivalTime: 1230,  // 20:30
+        estimatedDepartureTime: 1235,
+        coordinates: { latitude: 21.2150, longitude: 105.8150 }
       },
       {
         route: routes[3]._id,
-        stopName: 'West Park',
-        stopCode: 'WP-001',
-        address: '1800 Park Lane, West Suburbs',
+        stopName: 'Trạm dừng nghỉ Km57',
+        stopCode: 'KM57-01',
+        address: 'Km57 Cao tốc Nội Bài - Lào Cai, Phú Thọ',
         sequence: 3,
-        distanceFromStart: 16.2,
-        estimatedArrivalTime: 642,  // 10:42
-        estimatedDepartureTime: 644,  // 10:44
-        coordinates: { latitude: 40.6850, longitude: -74.0750 }
+        distanceFromStart: 82.0,
+        estimatedArrivalTime: 1300,  // 21:40
+        estimatedDepartureTime: 1320,  // 22:00
+        coordinates: { latitude: 21.4350, longitude: 105.2150 }
       },
       {
         route: routes[3]._id,
-        stopName: 'West Mall',
-        stopCode: 'WM-001',
-        address: '2500 Shopping Boulevard, West Suburbs',
+        stopName: 'Trạm dừng nghỉ Km237',
+        stopCode: 'KM237-01',
+        address: 'Km237 Cao tốc Nội Bài - Lào Cai, Bảo Thắng, Lào Cai',
         sequence: 4,
-        distanceFromStart: 22.0,
-        estimatedArrivalTime: 658,  // 10:58
-        estimatedDepartureTime: 660,  // 11:00
-        coordinates: { latitude: 40.6900, longitude: -74.0550 }
+        distanceFromStart: 262.0,
+        estimatedArrivalTime: 1500,  // 01:00 (next day)
+        estimatedDepartureTime: 1515,
+        coordinates: { latitude: 22.3850, longitude: 104.0500 }
       },
       {
         route: routes[3]._id,
-        stopName: 'West Station',
-        stopCode: 'WS-001',
-        address: '400 West Avenue, Westside',
+        stopName: 'Bến xe Sa Pa',
+        stopCode: 'SP-01',
+        address: 'Thị xã Sa Pa, Lào Cai',
         sequence: 5,
-        distanceFromStart: 28.7,
-        estimatedArrivalTime: 675,  // 11:15
-        estimatedDepartureTime: 675,
-        coordinates: { latitude: 40.7050, longitude: -74.0400 }
+        distanceFromStart: 315.7,
+        estimatedArrivalTime: 1560,  // 02:00 (next day)
+        estimatedDepartureTime: 1560,
+        coordinates: { latitude: 22.3350, longitude: 103.8420 }
       }
     );
 
-    // Stops for RT-005 (Old Highway Route - discontinued) - times in minutes from midnight
+    // Stops for HN-HP-02 (Hà Nội - Hải Phòng QL5 cũ)
     routeStops.push(
       {
         route: routes[4]._id,
-        stopName: 'South Terminal',
-        stopCode: 'ST-001',
-        address: '100 South Street, Southside',
+        stopName: 'Bến xe Gia Lâm',
+        stopCode: 'GL-02',
+        address: 'Số 9 Ngô Gia Khảm, Ngọc Lâm, Long Biên, Hà Nội',
         sequence: 1,
         distanceFromStart: 0,
         estimatedArrivalTime: 420,  // 07:00
         estimatedDepartureTime: 420,
-        coordinates: { latitude: 40.6800, longitude: -74.0050 }
+        coordinates: { latitude: 21.0475, longitude: 105.8770 }
       },
       {
         route: routes[4]._id,
-        stopName: 'Old Highway Stop',
-        stopCode: 'OHS-001',
-        address: 'Old Highway Mile 20',
+        stopName: 'Ngã tư Phố Nối',
+        stopCode: 'PN-01',
+        address: 'Quốc lộ 5, Mỹ Hào, Hưng Yên',
         sequence: 2,
-        distanceFromStart: 22.5,
+        distanceFromStart: 30.0,
         estimatedArrivalTime: 465,  // 07:45
-        estimatedDepartureTime: 467,  // 07:47
-        coordinates: { latitude: 40.7300, longitude: -74.0150 }
+        estimatedDepartureTime: 470,
+        coordinates: { latitude: 20.9300, longitude: 106.0500 }
       },
       {
         route: routes[4]._id,
-        stopName: 'North Terminal',
-        stopCode: 'NT-002',
-        address: '500 North Avenue, Northside',
+        stopName: 'Bến xe Tam Bạc',
+        stopCode: 'TB-02',
+        address: 'Tam Bạc, Lê Chân, Hải Phòng (Đã dỡ bỏ)',
         sequence: 3,
-        distanceFromStart: 45.2,
-        estimatedArrivalTime: 510,  // 08:30
-        estimatedDepartureTime: 510,
-        coordinates: { latitude: 40.7650, longitude: -74.0300 }
+        distanceFromStart: 105.2,
+        estimatedArrivalTime: 570,  // 09:30
+        estimatedDepartureTime: 570,
+        coordinates: { latitude: 20.8550, longitude: 106.6750 }
       }
     );
 

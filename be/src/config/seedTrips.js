@@ -51,7 +51,7 @@ const seedTrips = async () => {
       status: 'completed',
       passengerCount: 42,
       fare: 50.00,
-      notes: 'Trip completed successfully'
+      notes: 'Chuyến đi hoàn thành tốt đẹp'
     });
 
     // Trip 2: Completed trip (yesterday afternoon)
@@ -66,7 +66,7 @@ const seedTrips = async () => {
       status: 'completed',
       passengerCount: 38,
       fare: 45.00,
-      notes: 'Early arrival'
+      notes: 'Đến sớm hơn dự kiến'
     });
 
     // Trip 3: Cancelled trip (yesterday)
@@ -77,7 +77,7 @@ const seedTrips = async () => {
       scheduledDeparture: new Date(yesterday.getTime() + 18 * 60 * 60 * 1000), // 6:00 PM
       scheduledArrival: new Date(yesterday.getTime() + 19 * 60 * 60 * 1000), // 7:00 PM
       status: 'cancelled',
-      cancellationReason: 'Vehicle breakdown',
+      cancellationReason: 'Xe gặp sự cố hỏng hóc giữa đường',
       fare: 50.00
     });
 
@@ -93,7 +93,7 @@ const seedTrips = async () => {
       actualDeparture: new Date(thirtyMinutesAgo.getTime() + 2 * 60 * 1000), // 2 minutes late
       status: 'in-progress',
       fare: 50.00,
-      notes: 'Currently running'
+      notes: 'Đang di chuyển trên tuyến'
     });
 
     // Trip 5: Scheduled trip (today, in 2 hours)
@@ -132,7 +132,7 @@ const seedTrips = async () => {
       scheduledDeparture: inSixHours,
       scheduledArrival: inSevenHours,
       status: 'delayed',
-      delayReason: 'Traffic congestion',
+      delayReason: 'Tắc đường tại trạm thu phí',
       delayDuration: 30,
       fare: 50.00
     });
@@ -188,7 +188,7 @@ const seedTrips = async () => {
       status: 'completed',
       passengerCount: 48,
       fare: 45.00,
-      notes: 'Full capacity trip'
+      notes: 'Chuyến đi đầy đủ khách'
     });
 
     // Trip 12: Cancelled trip with delay (3 days ago)
@@ -201,7 +201,7 @@ const seedTrips = async () => {
       scheduledDeparture: new Date(threeDaysAgo.getTime() + 16 * 60 * 60 * 1000), // 4:00 PM
       scheduledArrival: new Date(threeDaysAgo.getTime() + 17 * 60 * 60 * 1000), // 5:00 PM
       status: 'cancelled',
-      cancellationReason: 'Driver unavailable',
+      cancellationReason: 'Tài xế nghỉ ốm đột xuất',
       fare: 50.00
     });
 

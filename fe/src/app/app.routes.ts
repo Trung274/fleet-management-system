@@ -46,6 +46,13 @@ export const routes: Routes = [
             (m) => m.RoutesComponent,
           ),
       },
+      {
+        path: 'trips',
+        loadComponent: () =>
+          import('./features/trips/trips.component').then(
+            (m) => m.TripsComponent,
+          ),
+      },
     ],
   },
   { path: '**', redirectTo: 'dashboard' },

@@ -1,0 +1,295 @@
+<!-- ─── Page Header ─────────────────────────────────────────────── -->
+<div class="page-header">
+  <div class="page-header-left">
+    <h1 class="page-title">Quản Lý Tuyến Đường</h1>
+    <p class="page-subtitle">{{ total() }} tuyến đường trong hệ thống</p>
+  </div>
+  <button id="add-route-btn" class="btn btn-primary" (click)="openCreateModal()">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+    </svg>
+    Thêm Tuyến
+  </button>
+</div>
+
+<!-- ─── Filters ──────────────────────────────────────────────────── -->
+<div class="filter-bar">
+  <div class="search-wrap">
+    <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+    </svg>
+    <input id="route-search" class="search-input" type="text"
+      placeholder="Tìm theo tên, mã, điểm đầu/cuối..."
+      [value]="searchQuery()"
+      (input)="onSearch($any($event.target).value)" />
+  </div>
+
+  <select id="status-filter" class="filter-select" [value]="statusFilter()" (change)="onStatusFilter($any($event.target).value)">
+    <option value="">Tất cả trạng thái</option>
+    @for (s of routeStatuses; track s.value) {
+      <option [value]="s.value">{{ s.label }}</option>
+    }
+  </select>
+
+  <select id="service-type-filter" class="filter-select" [value]="serviceTypeFilter()" (change)="onServiceTypeFilter($any($event.target).value)">
+    <option value="">Tất cả loại hình</option>
+    @for (t of serviceTypes; track t.value) {
+      <option [value]="t.value">{{ t.label }}</option>
+    }
+  </select>
+</div>
+
+<!-- ─── Table ────────────────────────────────────────────────────── -->
+<div class="table-card">
+  @if (isLoading()) {
+    <div class="loading-overlay">
+      <div class="spinner"></div>
+      <p>Đang tải...</p>
+    </div>
+  } @else if (routes().length === 0) {
+    <div class="empty-state">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z" />
+      </svg>
+      <p>Chưa có tuyến đường nào</p>
+      <button class="btn btn-primary" (click)="openCreateModal()">Thêm tuyến đầu tiên</button>
+    </div>
+  } @else {
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Tuyến Đường</th>
+            <th>Lộ Trình</th>
+            <th>Khoảng Cách</th>
+            <th>Thời Gian</th>
+            <th>Loại Hình</th>
+            <th>Trạng Thái</th>
+            <th class="col-actions">Thao Tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (route of routes(); track route._id) {
+            <tr class="table-row">
+              <td>
+                <div class="route-info">
+                  <div class="route-code-badge">{{ route.code }}</div>
+                  <div>
+                    <p class="route-name">{{ route.name }}</p>
+                    @if (route.description) {
+                      <p class="route-desc">{{ route.description }}</p>
+                    }
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div class="route-path">
+                  <span class="stop-dot origin"></span>
+                  <span class="stop-name">{{ route.origin }}</span>
+                  <div class="path-line"></div>
+                  <span class="stop-dot dest"></span>
+                  <span class="stop-name">{{ route.destination }}</span>
+                </div>
+              </td>
+              <td class="text-muted">{{ route.distance }} km</td>
+              <td class="text-muted">{{ formatDuration(route.estimatedDuration) }}</td>
+              <td>
+                <span class="service-badge" [class]="'service-' + route.serviceType">
+                  {{ getServiceTypeLabel(route.serviceType) }}
+                </span>
+              </td>
+              <td>
+                <span class="status-badge" [class]="'status-' + route.status">
+                  {{ getStatusLabel(route.status) }}
+                </span>
+              </td>
+              <td class="col-actions">
+                <div class="action-btns">
+                  <button class="action-btn btn-view" title="Xem chi tiết" (click)="openViewModal(route)">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </button>
+                  <button class="action-btn btn-edit" title="Chỉnh sửa" (click)="openEditModal(route)">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+                    </svg>
+                  </button>
+                  <button class="action-btn btn-delete" title="Xóa"
+                    [disabled]="isDeleting() === route._id" (click)="confirmDelete(route)">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                    </svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    @if (totalPages() > 1) {
+      <div class="pagination">
+        <button class="page-btn" [disabled]="currentPage() === 1" (click)="goToPage(currentPage() - 1)">‹</button>
+        @for (page of pages(); track page) {
+          <button class="page-btn" [class.active]="page === currentPage()" (click)="goToPage(page)">{{ page }}</button>
+        }
+        <button class="page-btn" [disabled]="currentPage() === totalPages()" (click)="goToPage(currentPage() + 1)">›</button>
+      </div>
+    }
+  }
+</div>
+
+<!-- ─── Create / Edit / View Modal ──────────────────────────────── -->
+@if (modalOpen()) {
+  <div class="modal-backdrop" (click)="closeModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title">{{ modalTitle() }}</h2>
+        <button class="modal-close" (click)="closeModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <form id="route-form" (ngSubmit)="onSubmit()">
+
+          <!-- Section: Thông tin tuyến -->
+          <div class="form-section">
+            <h3 class="form-section-title">Thông Tin Tuyến</h3>
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label class="form-label">Tên tuyến <span class="required">*</span></label>
+                <input class="form-input" type="text" placeholder="VD: Tuyến Bắc-Nam"
+                  [value]="form().name" [disabled]="isViewMode()"
+                  (input)="updateFormField('name', $any($event.target).value)" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Mã tuyến <span class="required">*</span></label>
+                <input class="form-input" type="text" placeholder="VD: RT-001"
+                  [value]="form().code" [disabled]="isViewMode()"
+                  (input)="updateFormField('code', $any($event.target).value)" required />
+              </div>
+              <div class="form-group form-full">
+                <label class="form-label">Mô tả</label>
+                <input class="form-input" type="text" placeholder="Mô tả ngắn về tuyến đường..."
+                  [value]="form().description ?? ''" [disabled]="isViewMode()"
+                  (input)="updateFormField('description', $any($event.target).value)" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Section: Lộ trình -->
+          <div class="form-section">
+            <h3 class="form-section-title">Lộ Trình</h3>
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label class="form-label">Điểm xuất phát <span class="required">*</span></label>
+                <input class="form-input" type="text" placeholder="VD: Bến xe Miền Đông"
+                  [value]="form().origin" [disabled]="isViewMode()"
+                  (input)="updateFormField('origin', $any($event.target).value)" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Điểm đến <span class="required">*</span></label>
+                <input class="form-input" type="text" placeholder="VD: Bến xe Miền Tây"
+                  [value]="form().destination" [disabled]="isViewMode()"
+                  (input)="updateFormField('destination', $any($event.target).value)" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Khoảng cách (km) <span class="required">*</span></label>
+                <input class="form-input" type="number" min="0.1" step="0.1" placeholder="VD: 25.5"
+                  [value]="form().distance" [disabled]="isViewMode()"
+                  (input)="updateNumericField('distance', $any($event.target).value)" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Thời gian ước tính (phút) <span class="required">*</span></label>
+                <input class="form-input" type="number" min="1" placeholder="VD: 45"
+                  [value]="form().estimatedDuration" [disabled]="isViewMode()"
+                  (input)="updateNumericField('estimatedDuration', $any($event.target).value)" required />
+              </div>
+            </div>
+          </div>
+
+          <!-- Section: Vận hành -->
+          <div class="form-section">
+            <h3 class="form-section-title">Vận Hành</h3>
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label class="form-label">Loại hình dịch vụ</label>
+                <select class="form-input" [disabled]="isViewMode()"
+                  [value]="form().serviceType"
+                  (change)="updateFormField('serviceType', $any($event.target).value)">
+                  @for (t of serviceTypes; track t.value) {
+                    <option [value]="t.value">{{ t.label }}</option>
+                  }
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Trạng thái</label>
+                <select class="form-input" [disabled]="isViewMode()"
+                  [value]="form().status"
+                  (change)="updateFormField('status', $any($event.target).value)">
+                  @for (s of routeStatuses; track s.value) {
+                    <option [value]="s.value">{{ s.label }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- View mode extra info -->
+          @if (isViewMode() && selectedRoute()) {
+            <div class="form-section">
+              <h3 class="form-section-title">Thông Tin Hệ Thống</h3>
+              <div class="view-info-grid">
+                <div class="view-info-item">
+                  <span class="view-info-label">Số điểm dừng</span>
+                  <span class="view-info-value">{{ selectedRoute()!.stops?.length ?? 0 }} điểm</span>
+                </div>
+                <div class="view-info-item">
+                  <span class="view-info-label">Khoảng cách</span>
+                  <span class="view-info-value">{{ selectedRoute()!.distance }} km</span>
+                </div>
+                <div class="view-info-item">
+                  <span class="view-info-label">Thời gian dự kiến</span>
+                  <span class="view-info-value">{{ formatDuration(selectedRoute()!.estimatedDuration) }}</span>
+                </div>
+              </div>
+            </div>
+          }
+
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeModal()">
+          {{ isViewMode() ? 'Đóng' : 'Hủy' }}
+        </button>
+        @if (!isViewMode()) {
+          <button class="btn btn-primary" form="route-form" type="submit" [disabled]="isSubmitting()">
+            @if (isSubmitting()) { <span class="spinner-sm"></span> }
+            {{ modalMode() === 'create' ? 'Thêm Tuyến' : 'Lưu Thay Đổi' }}
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ─── Delete Confirm Dialog (shared component) ──────────────── -->
+<app-confirm-dialog
+  [isOpen]="deleteConfirmOpen()"
+  [title]="'Xóa tuyến đường?'"
+  [message]="routeToDelete()
+    ? 'Bạn có chắc muốn xóa tuyến <strong>' + routeToDelete()!.name + '</strong> (<code>' + routeToDelete()!.code + '</code>)?<br/>Toàn bộ điểm dừng liên quan cũng sẽ bị xóa. Không thể hoàn tác.'
+    : ''"
+  confirmLabel="Xóa tuyến"
+  [isLoading]="!!isDeleting()"
+  (confirmed)="executeDelete()"
+  (cancelled)="cancelDelete()"
+/>

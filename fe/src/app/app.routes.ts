@@ -39,6 +39,13 @@ export const routes: Routes = [
             (m) => m.DriversComponent,
           ),
       },
+      {
+        path: 'routes',
+        loadComponent: () =>
+          import('./features/routes/routes.component').then(
+            (m) => m.RoutesComponent,
+          ),
+      },
     ],
   },
   { path: '**', redirectTo: 'dashboard' },

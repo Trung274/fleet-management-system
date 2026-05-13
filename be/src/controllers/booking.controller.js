@@ -174,7 +174,10 @@ const getBookingById = asyncHandler(async (req, res, next) => {
   const booking = await Booking.findById(req.params.id)
     .populate({
       path: 'trip',
-      populate: { path: 'route', select: 'name code origin destination' }
+      populate: [
+        { path: 'route',   select: 'name code origin destination' },
+        { path: 'vehicle', select: 'registrationNumber make model capacity' },
+      ],
     })
     .populate('seat', 'seatNumber type status');
 

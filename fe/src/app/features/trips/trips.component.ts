@@ -42,6 +42,7 @@ export class TripsComponent implements OnInit {
   vehicles   = signal<Vehicle[]>([]);
   drivers    = signal<Driver[]>([]);
   isLoading  = signal(false);
+  isLoadingDetail = signal(false);
   isSubmitting = signal(false);
   isActioning  = signal(false);
   isDeleting   = signal<string | null>(null);
@@ -208,10 +209,19 @@ export class TripsComponent implements OnInit {
     this.modalOpen.set(true);
   }
 
-  openViewModal(trip: Trip): void {
+  async openViewModal(trip: Trip): Promise<void> {
     this.selectedTrip.set(trip);
     this.modalMode.set('view');
     this.modalOpen.set(true);
+    this.isLoadingDetail.set(true);
+    try {
+      const res = await this.tripService.getById(trip._id);
+      this.selectedTrip.set(res.data);
+    } catch {
+      this.toastr.warning('Không thể tải chi tiết đầy đủ', 'Cảnh báo');
+    } finally {
+      this.isLoadingDetail.set(false);
+    }
   }
 
   closeModal(): void {

@@ -1,0 +1,423 @@
+<!-- ─── Page Header ─────────────────────────────────────────────── -->
+<div class="page-header">
+  <div class="page-header-left">
+    <h1 class="page-title">Quản Lý Đặt Vé</h1>
+    <p class="page-subtitle">{{ total() }} đặt vé trong hệ thống</p>
+  </div>
+  <app-add-button
+    buttonId="add-booking-btn"
+    label="Đặt Vé Mới"
+    (clicked)="openCreateModal()"
+  />
+</div>
+
+<!-- ─── Filters ──────────────────────────────────────────────────── -->
+<div class="filter-bar">
+  <app-search-input
+    inputId="booking-search"
+    placeholder="Tìm theo tên, SĐT hành khách..."
+    [value]="searchQuery()"
+    (search)="onSearch($event)"
+  />
+
+  <select id="status-filter" class="filter-select" [value]="statusFilter()" (change)="onStatusFilter($any($event.target).value)">
+    <option value="">Tất cả trạng thái</option>
+    @for (s of bookingStatuses; track s.value) {
+      <option [value]="s.value">{{ s.label }}</option>
+    }
+  </select>
+
+  <select id="trip-filter" class="filter-select" [value]="tripFilter()" (change)="onTripFilter($any($event.target).value)">
+    <option value="">Tất cả chuyến đi</option>
+    @for (t of trips(); track t._id) {
+      <option [value]="t._id">{{ t.route.code }} · {{ formatDatetime(t.scheduledDeparture) }}</option>
+    }
+  </select>
+</div>
+
+<!-- ─── Table ────────────────────────────────────────────────────── -->
+<div class="table-card">
+  @if (isLoading()) {
+    <div class="loading-overlay">
+      <div class="spinner"></div>
+      <p>Đang tải...</p>
+    </div>
+  } @else if (bookings().length === 0) {
+    <div class="empty-state">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 010 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 010-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375z" />
+      </svg>
+      <p>Chưa có đặt vé nào</p>
+      <button class="btn btn-primary" (click)="openCreateModal()">Tạo đặt vé đầu tiên</button>
+    </div>
+  } @else {
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Hành Khách</th>
+            <th>Chuyến Đi</th>
+            <th>Ghế</th>
+            <th>Trạng Thái</th>
+            <th>Giá Vé</th>
+            <th>Đặt Lúc</th>
+            <th style="text-align:right">Thao Tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (booking of bookings(); track booking._id) {
+            <tr class="table-row">
+              <!-- Passenger -->
+              <td>
+                <div class="passenger-cell">
+                  <div class="passenger-avatar">{{ booking.passenger.name[0] }}</div>
+                  <div>
+                    <p class="passenger-name">{{ booking.passenger.name }}</p>
+                    <p class="passenger-phone">{{ booking.passenger.phone }}</p>
+                  </div>
+                </div>
+              </td>
+
+              <!-- Trip -->
+              <td>
+                <div class="trip-cell">
+                  <span class="route-code">{{ booking.trip.route.code }}</span>
+                  <div>
+                    <p class="trip-route">{{ booking.trip.route.name }}</p>
+                    <p class="trip-time">{{ formatDatetime(booking.trip.scheduledDeparture) }}</p>
+                  </div>
+                </div>
+              </td>
+
+              <!-- Seat -->
+              <td>
+                <span class="seat-badge" [class]="'seat-' + booking.seat.type">
+                  #{{ booking.seat.seatNumber }}
+                  <span class="seat-type-label">{{ booking.seat.type }}</span>
+                </span>
+              </td>
+
+              <!-- Status -->
+              <td>
+                <span class="status-badge" [class]="'status-' + booking.status">
+                  {{ getStatusLabel(booking.status) }}
+                </span>
+              </td>
+
+              <!-- Fare -->
+              <td class="text-muted">
+                {{ booking.fare ? (booking.fare | number) + ' ₫' : '—' }}
+              </td>
+
+              <!-- Booked at -->
+              <td class="text-muted text-sm">{{ formatDatetime(booking.bookedAt) }}</td>
+
+              <!-- Actions -->
+              <td style="text-align:right; padding-right:.75rem">
+                <app-action-menu [actions]="getActions(booking)" />
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    @if (totalPages() > 1) {
+      <div class="pagination">
+        <button class="page-btn" [disabled]="currentPage() === 1" (click)="goToPage(currentPage() - 1)">‹</button>
+        @for (page of pages(); track page) {
+          <button class="page-btn" [class.active]="page === currentPage()" (click)="goToPage(page)">{{ page }}</button>
+        }
+        <button class="page-btn" [disabled]="currentPage() === totalPages()" (click)="goToPage(currentPage() + 1)">›</button>
+      </div>
+    }
+  }
+</div>
+
+<!-- ─── Create Modal ──────────────────────────────────────────────── -->
+@if (modalOpen() && !isViewMode()) {
+  <div class="modal-backdrop" (click)="closeModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title">{{ modalTitle() }}</h2>
+        <button class="modal-close" (click)="closeModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <form id="booking-form" (ngSubmit)="onSubmit()">
+
+          <!-- Chuyến + Ghế -->
+          <div class="form-section">
+            <h3 class="form-section-title">Chuyến Đi & Ghế Ngồi</h3>
+            <div class="form-group">
+              <label class="form-label">Chuyến đi <span class="required">*</span></label>
+              <select class="form-input"
+                [value]="form().tripId"
+                (change)="onTripSelect($any($event.target).value)">
+                <option value="">— Chọn chuyến đi —</option>
+                @for (t of trips(); track t._id) {
+                  @if (t.status === 'scheduled' || t.status === 'in-progress') {
+                    <option [value]="t._id">
+                      {{ t.route.code }} · {{ t.route.origin }} → {{ t.route.destination }} · {{ formatDatetime(t.scheduledDeparture) }}
+                    </option>
+                  }
+                }
+              </select>
+            </div>
+
+            @if (form().tripId) {
+              <div class="form-group">
+                <label class="form-label">Ghế trống <span class="required">*</span></label>
+                @if (seats().length === 0) {
+                  <p class="hint-text">Không có ghế trống cho chuyến này</p>
+                } @else {
+                  <div class="seat-grid">
+                    @for (seat of seats(); track seat._id) {
+                      <button type="button"
+                        class="seat-tile"
+                        [class.selected]="form().seatId === seat._id"
+                        [class]="'seat-tile seat-type-' + seat.type"
+                        (click)="form.update(f => ({ ...f, seatId: seat._id }))">
+                        <span class="seat-num">{{ seat.seatNumber }}</span>
+                        <span class="seat-lbl">{{ seat.type }}</span>
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Thông tin hành khách -->
+          <div class="form-section">
+            <h3 class="form-section-title">Thông Tin Hành Khách</h3>
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label class="form-label">Họ tên <span class="required">*</span></label>
+                <input class="form-input" type="text" placeholder="Nguyễn Văn A"
+                  [value]="form().passenger.name"
+                  (input)="updatePassengerField('name', $any($event.target).value)" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Số điện thoại <span class="required">*</span></label>
+                <input class="form-input" type="tel" placeholder="0901234567"
+                  [value]="form().passenger.phone"
+                  (input)="updatePassengerField('phone', $any($event.target).value)" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Email</label>
+                <input class="form-input" type="email" placeholder="email@example.com"
+                  [value]="form().passenger.email ?? ''"
+                  (input)="updatePassengerField('email', $any($event.target).value)" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">CCCD / Hộ chiếu</label>
+                <input class="form-input" type="text" placeholder="012345678901"
+                  [value]="form().passenger.idNumber ?? ''"
+                  (input)="updatePassengerField('idNumber', $any($event.target).value)" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Giá vé -->
+          <div class="form-section">
+            <h3 class="form-section-title">Thanh Toán</h3>
+            <div class="form-group" style="max-width:240px">
+              <label class="form-label">Giá vé (VNĐ)</label>
+              <input class="form-input" type="number" min="0" placeholder="VD: 150000"
+                [value]="form().fare ?? ''"
+                (input)="form.update(f => ({ ...f, fare: $any($event.target).value ? +$any($event.target).value : undefined }))" />
+            </div>
+          </div>
+
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeModal()">Hủy</button>
+        <button class="btn btn-primary" form="booking-form" type="submit" [disabled]="isSubmitting()">
+          @if (isSubmitting()) { <span class="spinner-sm"></span> }
+          Đặt Vé
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ─── View Modal ────────────────────────────────────────────────── -->
+@if (modalOpen() && isViewMode() && selectedBooking(); as b) {
+  <div class="modal-backdrop" (click)="closeModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title">Chi Tiết Đặt Vé</h2>
+        <button class="modal-close" (click)="closeModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Loading spinner khi fetch chi tiết đầy đủ -->
+        @if (isLoadingDetail()) {
+          <div class="detail-loading">
+            <div class="spinner"></div>
+            <p>Đang tải chi tiết...</p>
+          </div>
+        } @else {
+        <!-- Status banner -->
+        <div class="status-banner" [class]="'banner-' + b.status">
+          <span class="status-badge" [class]="'status-' + b.status">{{ getStatusLabel(b.status) }}</span>
+          @if (b.status === 'confirmed') {
+            <span class="banner-time">Xác nhận lúc {{ formatDatetime(b.confirmedAt) }}</span>
+          }
+          @if (b.status === 'cancelled') {
+            <span class="banner-time">Hủy lúc {{ formatDatetime(b.cancelledAt) }}</span>
+          }
+        </div>
+
+        <!-- Chuyến đi -->
+        <div class="view-section">
+          <h3 class="view-section-title">Thông Tin Chuyến</h3>
+          <div class="view-info-grid">
+            <div class="view-info-item">
+              <span class="view-info-label">Tuyến</span>
+              <span class="view-info-value">{{ b.trip.route.code }} · {{ b.trip.route.name }}</span>
+            </div>
+            <div class="view-info-item">
+              <span class="view-info-label">Điểm đi</span>
+              <span class="view-info-value">{{ b.trip.route.origin }}</span>
+            </div>
+            <div class="view-info-item">
+              <span class="view-info-label">Điểm đến</span>
+              <span class="view-info-value">{{ b.trip.route.destination }}</span>
+            </div>
+            <div class="view-info-item">
+              <span class="view-info-label">Khởi hành</span>
+              <span class="view-info-value">{{ formatDatetime(b.trip.scheduledDeparture) }}</span>
+            </div>
+            <div class="view-info-item">
+              <span class="view-info-label">Xe</span>
+              <span class="view-info-value">{{ b.trip.vehicle.registrationNumber }}</span>
+            </div>
+            <div class="view-info-item">
+              <span class="view-info-label">Ghế</span>
+              <span class="view-info-value">#{{ b.seat.seatNumber }} ({{ b.seat.type }})</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hành khách -->
+        <div class="view-section">
+          <h3 class="view-section-title">Thông Tin Hành Khách</h3>
+          <div class="view-info-grid">
+            <div class="view-info-item">
+              <span class="view-info-label">Họ tên</span>
+              <span class="view-info-value">{{ b.passenger.name }}</span>
+            </div>
+            <div class="view-info-item">
+              <span class="view-info-label">Điện thoại</span>
+              <span class="view-info-value">{{ b.passenger.phone }}</span>
+            </div>
+            @if (b.passenger.email) {
+              <div class="view-info-item">
+                <span class="view-info-label">Email</span>
+                <span class="view-info-value">{{ b.passenger.email }}</span>
+              </div>
+            }
+            @if (b.passenger.idNumber) {
+              <div class="view-info-item">
+                <span class="view-info-label">CCCD</span>
+                <span class="view-info-value">{{ b.passenger.idNumber }}</span>
+              </div>
+            }
+            @if (b.fare) {
+              <div class="view-info-item">
+                <span class="view-info-label">Giá vé</span>
+                <span class="view-info-value">{{ b.fare | number }} ₫</span>
+              </div>
+            }
+            <div class="view-info-item">
+              <span class="view-info-label">Đặt lúc</span>
+              <span class="view-info-value">{{ formatDatetime(b.bookedAt) }}</span>
+            </div>
+          </div>
+        </div>
+
+        @if (b.cancellationReason) {
+          <div class="view-info-item view-info-danger" style="margin-top:.5rem">
+            <span class="view-info-label">Lý do hủy</span>
+            <span class="view-info-value">{{ b.cancellationReason }}</span>
+          </div>
+        }
+        } <!-- end @else (isLoadingDetail) -->
+      </div>
+
+      <div class="modal-footer">
+        @if (canConfirm(b)) {
+          <button class="btn btn-success" [disabled]="isActioning()" (click)="confirmBooking(b); closeModal()">
+            @if (isActioning()) { <span class="spinner-sm"></span> }
+            Xác nhận
+          </button>
+        }
+        @if (canCancel(b)) {
+          <button class="btn btn-danger" (click)="openCancelDialog(b); closeModal()">Hủy đặt vé</button>
+        }
+        <button class="btn btn-secondary" (click)="closeModal()">Đóng</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ─── Cancel Dialog ────────────────────────────────────────────── -->
+@if (cancelDialogOpen()) {
+  <div class="modal-backdrop" (click)="closeCancelDialog()">
+    <div class="action-dialog" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title">Hủy Đặt Vé</h2>
+        <button class="modal-close" (click)="closeCancelDialog()">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="action-desc">
+          Hủy vé của <strong>{{ bookingToCancel()?.passenger?.name }}</strong>.
+          Ghế sẽ được giải phóng trở lại trạng thái trống.
+        </p>
+        <div class="form-group">
+          <label class="form-label">Lý do hủy (tùy chọn)</label>
+          <textarea class="form-input" rows="3" placeholder="Nhập lý do hủy..."
+            [value]="cancelReason()"
+            (input)="cancelReason.set($any($event.target).value)"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeCancelDialog()">Đóng</button>
+        <button class="btn btn-danger" [disabled]="isActioning()" (click)="submitCancel()">
+          @if (isActioning()) { <span class="spinner-sm"></span> }
+          Xác nhận hủy
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ─── Delete Confirm ────────────────────────────────────────────── -->
+<app-confirm-dialog
+  [isOpen]="deleteConfirmOpen()"
+  title="Xóa đặt vé?"
+  [message]="bookingToDelete()
+    ? 'Xóa đặt vé của <strong>' + bookingToDelete()!.passenger.name + '</strong>?<br/>Chỉ đặt vé đã hủy mới được xóa.'
+    : ''"
+  confirmLabel="Xóa đặt vé"
+  [isLoading]="!!isDeleting()"
+  (confirmed)="executeDelete()"
+  (cancelled)="cancelDelete()"
+/>

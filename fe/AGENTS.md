@@ -553,3 +553,47 @@ Nút thêm mới (gradient xanh, icon +) dùng chung ở header của mọi tran
 **Lưu ý:**
 - Style gradient (`#3b82f6 → #6366f1`) được đóng gói trong component, không phụ thuộc vào CSS của trang cha.
 - Đặt bên trong `<div class="page-header">` cạnh khối tiêu đề trang (`.page-title` / `.page-subtitle`).
+
+---
+
+## Module: Bookings & Seats
+
+### Files
+
+| File | Mục đích |
+|---|---|
+| `core/models/booking.model.ts` | Booking, BookingPassenger, BookingCreatePayload, BookingCancelPayload |
+| `core/models/seat.model.ts` | Seat, SeatAvailability, SeatStatus, SeatType |
+| `core/services/booking.service.ts` | CRUD + confirm/cancel lifecycle |
+| `core/services/seat.service.ts` | getSeatMap, getAvailability, initializeSeats, updateStatus |
+| `features/bookings/bookings.component.ts` | Full component với Signals state |
+| `features/bookings/bookings.component.html` | Table + create modal + view modal + cancel dialog |
+| `features/bookings/bookings.component.css` | Dark theme + seat grid picker |
+
+### API Endpoints (Backend `/api/v1`)
+
+| Method | Path | Mô tả |
+|---|---|---|
+| `POST` | `/bookings` | Tạo booking (seat → reserved) |
+| `GET` | `/bookings` | Danh sách, filter: `tripId`, `status`, `search`, pagination |
+| `GET` | `/bookings/:id` | Chi tiết booking (populated) |
+| `PATCH` | `/bookings/:id/confirm` | Xác nhận booking (seat → booked) |
+| `PATCH` | `/bookings/:id/cancel` | Hủy booking (seat → available), body: `{ reason }` |
+| `DELETE` | `/bookings/:id` | Xóa booking (Admin only) |
+| `GET` | `/seats/availability?tripId=` | Tóm tắt khả dụng ghế (public) |
+| `GET` | `/seats?tripId=&status=` | Sơ đồ ghế đầy đủ (auth) |
+| `POST` | `/seats/initialize` | Khởi tạo ghế cho chuyến (Manager) |
+| `PATCH` | `/seats/:id` | Cập nhật trạng thái ghế (chỉ `available`/`unavailable`) |
+
+### Business Logic
+
+- **Booking lifecycle**: `pending` → `confirmed` (Xác nhận) | `pending/confirmed` → `cancelled` (Hủy)
+- **Seat lifecycle**: khi booking pending → seat `reserved`; confirmed → `booked`; cancelled → `available`
+- **Seat picker**: Khi chọn chuyến đi trong modal tạo, component gọi `getSeatMap(tripId, 'available')` để hiển thị grid ghế trống. Ghế được chọn highlight bằng class `selected`.
+- **Chỉ xóa được booking ở trạng thái `cancelled`**
+- **Search server-side**: Bookings hỗ trợ `search` param (tìm theo `passenger.name` hoặc `passenger.phone`)
+
+### Design Notes
+- Seat grid picker hiển thị ghế có màu theo type: `standard` (mặc định), `window` (xanh), `aisle` (tím), `priority` (vàng)
+- Status banner trong view modal đổi màu theo trạng thái booking
+- Sử dụng đầy đủ shared components: `AddButtonComponent`, `SearchInputComponent`, `ActionMenuComponent`, `ConfirmDialogComponent`

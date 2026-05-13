@@ -169,14 +169,125 @@
       </div>
 
       <div class="modal-body">
-        <form id="trip-form" (ngSubmit)="onSubmit()">
+
+        <!-- ── VIEW MODE ── hiển thị thông tin từ selectedTrip() trực tiếp -->
+        @if (isViewMode()) {
+          @if (isLoadingDetail()) {
+            <div class="detail-loading">
+              <div class="spinner"></div>
+              <p>Đang tải chi tiết...</p>
+            </div>
+          } @else if (selectedTrip(); as t) {
+            <!-- Trạng thái -->
+            <div class="status-banner" [class]="'banner-' + t.status">
+              <span class="status-badge" [class]="'status-' + t.status">{{ getStatusLabel(t.status) }}</span>
+              @if (t.delayDuration) {
+                <span class="delay-badge">Trễ {{ t.delayDuration }}p</span>
+              }
+            </div>
+
+            <!-- Tuyến & Lịch trình -->
+            <div class="view-section">
+              <h3 class="view-section-title">Tuyến & Lịch Trình</h3>
+              <div class="view-info-grid">
+                <div class="view-info-item" style="grid-column:span 2">
+                  <span class="view-info-label">Tuyến</span>
+                  <span class="view-info-value">{{ t.route.code }} · {{ t.route.name }}</span>
+                </div>
+                <div class="view-info-item">
+                  <span class="view-info-label">Điểm đi</span>
+                  <span class="view-info-value">{{ t.route.origin }}</span>
+                </div>
+                <div class="view-info-item">
+                  <span class="view-info-label">Điểm đến</span>
+                  <span class="view-info-value">{{ t.route.destination }}</span>
+                </div>
+                <div class="view-info-item">
+                  <span class="view-info-label">Khởi hành (dự kiến)</span>
+                  <span class="view-info-value">{{ formatDatetime(t.scheduledDeparture) }}</span>
+                </div>
+                <div class="view-info-item">
+                  <span class="view-info-label">Đến nơi (dự kiến)</span>
+                  <span class="view-info-value">{{ formatDatetime(t.scheduledArrival) }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tài nguyên -->
+            <div class="view-section">
+              <h3 class="view-section-title">Xe & Tài Xế</h3>
+              <div class="view-info-grid">
+                <div class="view-info-item">
+                  <span class="view-info-label">Biển số xe</span>
+                  <span class="view-info-value">{{ t.vehicle.registrationNumber }}</span>
+                </div>
+                <div class="view-info-item">
+                  <span class="view-info-label">Xe</span>
+                  <span class="view-info-value">{{ t.vehicle.make }} {{ t.vehicle.model }}</span>
+                </div>
+                <div class="view-info-item">
+                  <span class="view-info-label">Tài xế</span>
+                  <span class="view-info-value">{{ t.driver.firstName }} {{ t.driver.lastName }}</span>
+                </div>
+                <div class="view-info-item">
+                  <span class="view-info-label">GPLX</span>
+                  <span class="view-info-value">{{ t.driver.licenseNumber }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Thông tin thực tế -->
+            <div class="view-section">
+              <h3 class="view-section-title">Thông Tin Thực Tế</h3>
+              <div class="view-info-grid">
+                <div class="view-info-item">
+                  <span class="view-info-label">Giá vé</span>
+                  <span class="view-info-value">{{ t.fare ? (t.fare | number) + ' ₫' : '—' }}</span>
+                </div>
+                <div class="view-info-item">
+                  <span class="view-info-label">Thực xuất phát</span>
+                  <span class="view-info-value">{{ formatDatetime(t.actualDeparture) }}</span>
+                </div>
+                <div class="view-info-item">
+                  <span class="view-info-label">Thực đến nơi</span>
+                  <span class="view-info-value">{{ formatDatetime(t.actualArrival) }}</span>
+                </div>
+                <div class="view-info-item">
+                  <span class="view-info-label">Hành khách</span>
+                  <span class="view-info-value">{{ t.passengerCount ?? '—' }}</span>
+                </div>
+                @if (t.notes) {
+                  <div class="view-info-item" style="grid-column:span 2">
+                    <span class="view-info-label">Ghi chú</span>
+                    <span class="view-info-value">{{ t.notes }}</span>
+                  </div>
+                }
+                @if (t.cancellationReason) {
+                  <div class="view-info-item view-info-danger" style="grid-column:span 2">
+                    <span class="view-info-label">Lý do hủy</span>
+                    <span class="view-info-value">{{ t.cancellationReason }}</span>
+                  </div>
+                }
+                @if (t.delayReason) {
+                  <div class="view-info-item view-info-warning" style="grid-column:span 2">
+                    <span class="view-info-label">Lý do trễ ({{ t.delayDuration }}p)</span>
+                    <span class="view-info-value">{{ t.delayReason }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+        } @else {
+          <!-- ── CREATE / EDIT MODE ── form fields -->
+          <form id="trip-form" (ngSubmit)="onSubmit()">
 
           <!-- Section: Tuyến & Lịch trình -->
           <div class="form-section">
             <h3 class="form-section-title">Tuyến & Lịch Trình</h3>
             <div class="form-group">
               <label class="form-label">Tuyến đường <span class="required">*</span></label>
-              <select class="form-input" [disabled]="isViewMode()"
+              <select class="form-input"
                 [value]="form().route"
                 (change)="updateFormField('route', $any($event.target).value)" required>
                 <option value="">— Chọn tuyến —</option>
@@ -189,13 +300,13 @@
               <div class="form-group">
                 <label class="form-label">Giờ xuất phát <span class="required">*</span></label>
                 <input class="form-input" type="datetime-local"
-                  [value]="form().scheduledDeparture" [disabled]="isViewMode()"
+                  [value]="form().scheduledDeparture"
                   (input)="updateFormField('scheduledDeparture', $any($event.target).value)" required />
               </div>
               <div class="form-group">
                 <label class="form-label">Giờ đến dự kiến <span class="required">*</span></label>
                 <input class="form-input" type="datetime-local"
-                  [value]="form().scheduledArrival" [disabled]="isViewMode()"
+                  [value]="form().scheduledArrival"
                   (input)="updateFormField('scheduledArrival', $any($event.target).value)" required />
               </div>
             </div>
@@ -207,7 +318,7 @@
             <div class="form-grid-2">
               <div class="form-group">
                 <label class="form-label">Xe <span class="required">*</span></label>
-                <select class="form-input" [disabled]="isViewMode()"
+                <select class="form-input"
                   [value]="form().vehicle"
                   (change)="updateFormField('vehicle', $any($event.target).value)" required>
                   <option value="">— Chọn xe —</option>
@@ -218,7 +329,7 @@
               </div>
               <div class="form-group">
                 <label class="form-label">Tài xế <span class="required">*</span></label>
-                <select class="form-input" [disabled]="isViewMode()"
+                <select class="form-input"
                   [value]="form().driver"
                   (change)="updateFormField('driver', $any($event.target).value)" required>
                   <option value="">— Chọn tài xế —</option>
@@ -237,52 +348,21 @@
               <div class="form-group">
                 <label class="form-label">Giá vé (VNĐ)</label>
                 <input class="form-input" type="number" min="0" placeholder="VD: 150000"
-                  [value]="form().fare ?? ''" [disabled]="isViewMode()"
+                  [value]="form().fare ?? ''"
                   (input)="updateFormField('fare', $any($event.target).value ? +$any($event.target).value : undefined)" />
               </div>
               <div class="form-group">
                 <label class="form-label">Ghi chú</label>
                 <input class="form-input" type="text" placeholder="Ghi chú về chuyến đi..."
-                  [value]="form().notes ?? ''" [disabled]="isViewMode()"
+                  [value]="form().notes ?? ''"
                   (input)="updateFormField('notes', $any($event.target).value)" />
               </div>
             </div>
           </div>
 
-          <!-- View mode: actual times + extra info -->
-          @if (isViewMode() && selectedTrip(); as trip) {
-            <div class="form-section">
-              <h3 class="form-section-title">Thông Tin Thực Tế</h3>
-              <div class="view-info-grid">
-                <div class="view-info-item">
-                  <span class="view-info-label">Thực xuất phát</span>
-                  <span class="view-info-value">{{ formatDatetime(trip.actualDeparture) }}</span>
-                </div>
-                <div class="view-info-item">
-                  <span class="view-info-label">Thực đến nơi</span>
-                  <span class="view-info-value">{{ formatDatetime(trip.actualArrival) }}</span>
-                </div>
-                <div class="view-info-item">
-                  <span class="view-info-label">Hành khách</span>
-                  <span class="view-info-value">{{ trip.passengerCount ?? '—' }}</span>
-                </div>
-                @if (trip.cancellationReason) {
-                  <div class="view-info-item view-info-danger">
-                    <span class="view-info-label">Lý do hủy</span>
-                    <span class="view-info-value">{{ trip.cancellationReason }}</span>
-                  </div>
-                }
-                @if (trip.delayReason) {
-                  <div class="view-info-item view-info-warning">
-                    <span class="view-info-label">Lý do trễ ({{ trip.delayDuration }}p)</span>
-                    <span class="view-info-value">{{ trip.delayReason }}</span>
-                  </div>
-                }
-              </div>
-            </div>
-          }
+          </form>
+        }
 
-        </form>
       </div>
 
       <div class="modal-footer">

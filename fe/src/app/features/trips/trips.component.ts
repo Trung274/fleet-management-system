@@ -234,9 +234,17 @@ export class TripsComponent implements OnInit {
     if (this.isViewMode()) return;
     this.isSubmitting.set(true);
     const f = this.form();
+
+    // `datetime-local` values are `YYYY-MM-DDTHH:MM` (no timezone).
+    // We need to convert them to proper ISO strings so the backend
+    // receives the user's *local* intent, not UTC-shifted values.
+    const toISO = (local: string) => local ? new Date(local).toISOString() : local;
+
     const payload = {
       ...f,
       fare: f.fare ? Number(f.fare) : undefined,
+      scheduledDeparture: toISO(f.scheduledDeparture),
+      scheduledArrival:   toISO(f.scheduledArrival),
     };
 
     try {

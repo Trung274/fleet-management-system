@@ -33,8 +33,14 @@ const tripSchema = new mongoose.Schema({
     type: Date,
     required: [true, 'Please provide scheduled arrival time'],
     validate: {
+      // In create/save context, `this` is the document
       validator: function(value) {
-        return value > this.scheduledDeparture;
+        // During findByIdAndUpdate, `this` is the Query — use this.get()
+        const dep = typeof this.get === 'function'
+          ? this.get('scheduledDeparture')
+          : this.scheduledDeparture;
+        if (!dep) return true; // Can't compare without departure — controller handles it
+        return value > dep;
       },
       message: 'Scheduled arrival must be after scheduled departure'
     }
@@ -110,6 +116,34 @@ tripSchema.pre('save', function(next) {
   // Validate delay reason when status is delayed
   if (this.status === 'delayed' && !this.delayReason) {
     return next(new Error('Delay reason is required when status is delayed'));
+  }
+
+  next();
+});
+
+// Pre-update hook: validate scheduledArrival > scheduledDeparture
+tripSchema.pre('findOneAndUpdate', async function(next) {
+  const update = this.getUpdate();
+  const dep = update.scheduledDeparture;
+  const arr = update.scheduledArrival;
+
+  // Only validate when both are being changed simultaneously
+  if (dep && arr) {
+    if (new Date(arr) <= new Date(dep)) {
+      return next(new Error('Scheduled arrival must be after scheduled departure'));
+    }
+  } else if (arr) {
+    // Only arrival is changing — fetch existing departure from DB
+    const doc = await this.model.findOne(this.getFilter()).select('scheduledDeparture');
+    if (doc && new Date(arr) <= doc.scheduledDeparture) {
+      return next(new Error('Scheduled arrival must be after scheduled departure'));
+    }
+  } else if (dep) {
+    // Only departure is changing — fetch existing arrival from DB
+    const doc = await this.model.findOne(this.getFilter()).select('scheduledArrival');
+    if (doc && doc.scheduledArrival <= new Date(dep)) {
+      return next(new Error('Scheduled arrival must be after scheduled departure'));
+    }
   }
 
   next();

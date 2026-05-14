@@ -150,6 +150,7 @@
 
 /* ─── Form ────────────────────────────────────────────────────── */
 .form-section { display:flex; flex-direction:column; gap:.75rem; }
+.form-section + .form-section { margin-top: 1.25rem; }
 .form-section-title { font-size:.8rem; font-weight:700; color:#3b82f6; text-transform:uppercase; letter-spacing:.07em; padding-bottom:.5rem; border-bottom:1px solid rgba(59,130,246,.2); margin:0; }
 .form-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:.75rem; }
 @media (max-width:600px) { .form-grid-2 { grid-template-columns:1fr; } }

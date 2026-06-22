@@ -1,12 +1,17 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
-const connectDB = require('../config/database');
 const Trip = require('../models/Trip.model');
 const Seat = require('../models/Seat.model');
 const Booking = require('../models/Booking.model');
 const Vehicle = require('../models/Vehicle.model');
 
-connectDB();
+// Connect to database
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log('✓ MongoDB Connected'))
+  .catch(err => {
+    console.error('MongoDB connection error:', err);
+    process.exit(1);
+  });
 
 const seedBookings = async () => {
   try {

@@ -9,11 +9,13 @@
     "test": "jest --coverage",
     "test:report": "node scripts/generate-test-report.js",
     "seed:roles": "node src/config/seedRolesPermissions.js",
+    "seed:users": "node src/config/seedUsers.js",
     "seed:vehicles": "node src/config/seedVehicles.js",
     "seed:drivers": "node src/config/seedDrivers.js",
     "seed:routes": "node src/config/seedRoutes.js",
     "seed:trips": "node src/config/seedTrips.js",
-    "seed:bookings": "node src/config/seedBookings.js"
+    "seed:bookings": "node src/config/seedBookings.js",
+    "seed:all": "node src/config/seedAll.js"
   },
   "keywords": [
     "nodejs",

@@ -6,10 +6,10 @@
   font-size: 1.75rem;
   font-weight: 700;
   color: #f1f5f9;
-  margin: 0 0 0.5rem;
+  margin: 0 0 0.375rem;
 }
 .welcome-subtitle {
-  font-size: 0.938rem;
+  font-size: 0.9rem;
   color: #64748b;
   margin: 0;
 }
@@ -19,6 +19,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 1.25rem;
+  margin-bottom: 2rem;
 }
 
 .stat-card {
@@ -27,14 +28,14 @@
   border-radius: 16px;
   padding: 1.25rem;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 1rem;
-  transition: border-color 0.2s, transform 0.2s;
-  cursor: default;
+  transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
 }
 .stat-card:hover {
   border-color: rgba(255, 255, 255, 0.15);
   transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
 .stat-icon {
@@ -48,20 +49,213 @@
   font-size: 1.25rem;
 }
 
-.stat-info { flex: 1; }
+.stat-info { flex: 1; min-width: 0; }
+
 .stat-value {
-  font-size: 1.5rem;
+  font-size: 1.75rem;
   font-weight: 700;
   color: #f1f5f9;
-  margin: 0 0 0.25rem;
+  margin: 0 0 0.125rem;
+  line-height: 1;
 }
 .stat-label {
   font-size: 0.813rem;
+  color: #94a3b8;
+  margin: 0 0 0.5rem;
+}
+.stat-subs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+.stat-sub {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  line-height: 1;
+}
+.stat-sub-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.stat-sub-val {
+  font-weight: 600;
+  color: #cbd5e1;
+}
+.stat-sub-lbl {
   color: #64748b;
-  margin: 0;
 }
 
+/* ─── Skeleton ───────────────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
+.skeleton {
+  border-radius: 6px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s infinite linear;
+}
+.skeleton-value  { height: 28px; width: 60%; margin-bottom: 0.375rem; }
+.skeleton-label  { height: 12px; width: 80%; margin-bottom: 0.375rem; }
+.skeleton-route  { height: 14px; width: 40%; }
+.skeleton-badge  { height: 20px; width: 80px; border-radius: 20px; }
+.skeleton-text   { height: 12px; width: 30%; }
+
+/* ─── Error Banner ───────────────────────────────────────────────── */
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(127, 29, 29, 0.25);
+  border: 1px solid rgba(220, 38, 38, 0.4);
+  border-radius: 12px;
+  padding: 0.875rem 1.25rem;
+  color: #fca5a5;
+  font-size: 0.875rem;
+  margin-bottom: 2rem;
+}
+.retry-btn {
+  background: none;
+  border: 1px solid rgba(252, 165, 165, 0.5);
+  color: #fca5a5;
+  border-radius: 6px;
+  padding: 0.2rem 0.6rem;
+  cursor: pointer;
+  font-size: 0.813rem;
+  transition: background 0.15s;
+  margin-left: auto;
+}
+.retry-btn:hover { background: rgba(220, 38, 38, 0.2); }
+
+/* ─── Section Header ─────────────────────────────────────────────── */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+.section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin: 0;
+}
+.section-link {
+  font-size: 0.813rem;
+  color: #60a5fa;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.section-link:hover { color: #93c5fd; }
+
+/* ─── Trips Card ─────────────────────────────────────────────────── */
+.trips-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.trip-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1.5fr;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.875rem 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.15s;
+}
+.trip-row:last-child { border-bottom: none; }
+.trip-row:not(.trip-row-header):hover { background: rgba(255, 255, 255, 0.04); }
+
+.trip-row-header {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+.skeleton-row { gap: 1rem; }
+
+/* ─── Trip Row Content ───────────────────────────────────────────── */
+.trip-route { display: flex; flex-direction: column; gap: 0.125rem; min-width: 0; }
+.trip-route-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #e2e8f0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.trip-route-leg {
+  font-size: 0.75rem;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trip-time {
+  font-size: 0.813rem;
+  color: #94a3b8;
+  font-variant-numeric: tabular-nums;
+}
+
+.trip-resource { display: flex; flex-direction: column; gap: 0.125rem; }
+.trip-vehicle {
+  font-size: 0.813rem;
+  font-weight: 500;
+  color: #cbd5e1;
+  font-family: monospace;
+}
+.trip-driver { font-size: 0.75rem; color: #64748b; }
+
+/* ─── Status Badges ──────────────────────────────────────────────── */
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.badge-scheduled   { background: rgba(59,130,246,0.15);  color: #60a5fa;  border: 1px solid rgba(59,130,246,0.3);  }
+.badge-inprogress  { background: rgba(34,197,94,0.15);   color: #4ade80;  border: 1px solid rgba(34,197,94,0.3);   }
+.badge-completed   { background: rgba(100,116,139,0.15); color: #94a3b8;  border: 1px solid rgba(100,116,139,0.3); }
+.badge-cancelled   { background: rgba(239,68,68,0.15);   color: #f87171;  border: 1px solid rgba(239,68,68,0.3);   }
+.badge-delayed     { background: rgba(245,158,11,0.15);  color: #fbbf24;  border: 1px solid rgba(245,158,11,0.3);  }
+
+/* ─── Empty State ────────────────────────────────────────────────── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 3rem 1rem;
+  color: #475569;
+  font-size: 0.875rem;
+}
+.empty-icon { font-size: 2.5rem; opacity: 0.4; }
+
+/* ─── Responsive ─────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .trip-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+  .trip-row-header { display: none; }
+  .trip-time, .trip-resource { display: none; }
+}
 @media (max-width: 640px) {
-  .dashboard-main { padding: 1rem; }
   .welcome-title { font-size: 1.375rem; }
+  .stats-grid { grid-template-columns: 1fr 1fr; }
 }

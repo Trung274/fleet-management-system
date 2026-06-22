@@ -1,23 +1,111 @@
+<!-- ─── Welcome ──────────────────────────────────────────────────── -->
 <div class="welcome-section">
   <h1 class="welcome-title">
     Xin chào, {{ authService.user()?.name ?? 'User' }}! 👋
   </h1>
   <p class="welcome-subtitle">
-    Chào mừng đến với hệ thống quản lý xe Fleet Management.
+    Tổng quan hoạt động hệ thống Fleet Management hôm nay.
   </p>
 </div>
 
-<!-- Stats placeholder cards -->
+<!-- ─── Stat Cards ───────────────────────────────────────────────── -->
 <div class="stats-grid">
   @for (card of statCards; track card.label) {
     <div class="stat-card">
       <div class="stat-icon" [style.background]="card.gradient">
-        <span [innerHTML]="card.icon"></span>
+        <span>{{ card.icon }}</span>
       </div>
       <div class="stat-info">
-        <p class="stat-value">—</p>
-        <p class="stat-label">{{ card.label }}</p>
+        @if (isLoading()) {
+          <div class="skeleton skeleton-value"></div>
+          <div class="skeleton skeleton-label"></div>
+        } @else {
+          <p class="stat-value">{{ card.value() }}</p>
+          <p class="stat-label">{{ card.label }}</p>
+          <div class="stat-subs-list">
+            @for (sub of card.subs(); track sub.label) {
+              <p class="stat-sub">
+                <span class="stat-sub-dot" [style.background]="sub.dotColor"></span>
+                <span class="stat-sub-val">{{ sub.value }}</span>
+                <span class="stat-sub-lbl">{{ sub.label }}</span>
+              </p>
+            }
+          </div>
+        }
       </div>
     </div>
+  }
+</div>
+
+<!-- ─── Error state ──────────────────────────────────────────────── -->
+@if (hasError()) {
+  <div class="error-banner">
+    <span>⚠️</span>
+    <span>Không thể tải dữ liệu. </span>
+    <button class="retry-btn" (click)="loadStats()">Thử lại</button>
+  </div>
+}
+
+<!-- ─── Recent Trips ─────────────────────────────────────────────── -->
+<div class="section-header">
+  <h2 class="section-title">Chuyến xe gần đây</h2>
+  <a routerLink="/trips" class="section-link">Xem tất cả →</a>
+</div>
+
+<div class="trips-card">
+  @if (isLoading()) {
+    <!-- Skeleton rows -->
+    @for (i of [1,2,3,4,5]; track i) {
+      <div class="trip-row skeleton-row">
+        <div class="skeleton skeleton-route"></div>
+        <div class="skeleton skeleton-badge"></div>
+        <div class="skeleton skeleton-text"></div>
+        <div class="skeleton skeleton-text"></div>
+      </div>
+    }
+  } @else if (recentTrips.length === 0) {
+    <div class="empty-state">
+      <span class="empty-icon">🚌</span>
+      <p>Chưa có chuyến xe nào.</p>
+    </div>
+  } @else {
+    <!-- Header row -->
+    <div class="trip-row trip-row-header">
+      <span>Tuyến đường</span>
+      <span>Trạng thái</span>
+      <span>Khởi hành</span>
+      <span>Xe / Tài xế</span>
+    </div>
+
+    @for (trip of recentTrips; track trip._id) {
+      <div class="trip-row">
+        <!-- Route -->
+        <div class="trip-route">
+          <span class="trip-route-name">{{ trip.route?.name ?? '—' }}</span>
+          <span class="trip-route-leg">
+            {{ trip.route?.origin ?? '' }}
+            @if (trip.route?.destination) { → {{ trip.route.destination }} }
+          </span>
+        </div>
+
+        <!-- Status badge -->
+        <span class="badge" [ngClass]="statusClass(trip.status)">
+          {{ statusLabel(trip.status) }}
+        </span>
+
+        <!-- Departure -->
+        <span class="trip-time">
+          {{ trip.scheduledDeparture | date:'dd/MM HH:mm' }}
+        </span>
+
+        <!-- Vehicle / Driver -->
+        <div class="trip-resource">
+          <span class="trip-vehicle">{{ trip.vehicle?.registrationNumber ?? '—' }}</span>
+          <span class="trip-driver">
+            {{ trip.driver?.lastName ?? '' }} {{ trip.driver?.firstName ?? '—' }}
+          </span>
+        </div>
+      </div>
+    }
   }
 </div>

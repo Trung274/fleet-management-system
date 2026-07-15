@@ -21,6 +21,17 @@ export class HeaderComponent {
     private toastr: ToastrService,
   ) {}
 
+  get pageTitle(): string {
+    const url = this.router.url;
+    if (url.startsWith('/dashboard')) return 'Tổng quan';
+    if (url.startsWith('/vehicles')) return 'Quản lý phương tiện';
+    if (url.startsWith('/drivers')) return 'Quản lý tài xế';
+    if (url.startsWith('/routes')) return 'Quản lý tuyến đường';
+    if (url.startsWith('/trips')) return 'Quản lý chuyến đi';
+    if (url.startsWith('/bookings')) return 'Quản lý đặt vé';
+    return 'Hệ thống điều hành';
+  }
+
   get userInitial(): string {
     const name = this.authService.user()?.name;
     return name ? name.charAt(0).toUpperCase() : 'U';

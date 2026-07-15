@@ -1,29 +1,23 @@
 <nav class="sidebar" [class.collapsed]="isCollapsed()">
   <!-- ── Logo / Brand ── -->
   <div class="sidebar-brand">
-    <div class="brand-icon">
+    <div class="brand-icon" (click)="toggleCollapse()" style="cursor: pointer;" title="Toggle Sidebar">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
       </svg>
     </div>
     @if (!isCollapsed()) {
-      <div class="brand-text">
+      <div class="brand-text" (click)="toggleCollapse()" style="cursor: pointer; user-select: none;" title="Toggle Sidebar">
         <span class="brand-name">Fleet</span>
         <span class="brand-sub">Management</span>
       </div>
     }
-    <button class="collapse-btn" (click)="toggleCollapse()" [attr.aria-label]="isCollapsed() ? 'Mở rộng' : 'Thu gọn'">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
-           [class.rotated]="isCollapsed()">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-      </svg>
-    </button>
   </div>
 
   <!-- ── Navigation ── -->
   <div class="sidebar-nav">
     @if (!isCollapsed()) {
-      <p class="nav-section-label">Menu chính</p>
+
     }
 
     @for (item of navItems; track item.route) {

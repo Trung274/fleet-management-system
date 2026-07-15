@@ -1,7 +1,7 @@
 <!-- ─── Welcome ──────────────────────────────────────────────────── -->
 <div class="welcome-section">
   <h1 class="welcome-title">
-    Xin chào, {{ authService.user()?.name ?? 'User' }}! 👋
+    Xin chào, {{ authService.user()?.name ?? 'User' }}!
   </h1>
   <p class="welcome-subtitle">
     Tổng quan hoạt động hệ thống Fleet Management hôm nay.
@@ -81,10 +81,10 @@
       <div class="trip-row">
         <!-- Route -->
         <div class="trip-route">
-          <span class="trip-route-name">{{ trip.route?.name ?? '—' }}</span>
+          <span class="trip-route-name">{{ trip.route.name }}</span>
           <span class="trip-route-leg">
-            {{ trip.route?.origin ?? '' }}
-            @if (trip.route?.destination) { → {{ trip.route.destination }} }
+            {{ trip.route.origin }}
+            @if (trip.route.destination) { → {{ trip.route.destination }} }
           </span>
         </div>
 
@@ -100,9 +100,9 @@
 
         <!-- Vehicle / Driver -->
         <div class="trip-resource">
-          <span class="trip-vehicle">{{ trip.vehicle?.registrationNumber ?? '—' }}</span>
+          <span class="trip-vehicle">{{ trip.vehicle.registrationNumber }}</span>
           <span class="trip-driver">
-            {{ trip.driver?.lastName ?? '' }} {{ trip.driver?.firstName ?? '—' }}
+            {{ trip.driver.lastName }} {{ trip.driver.firstName }}
           </span>
         </div>
       </div>

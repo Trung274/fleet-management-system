@@ -17,7 +17,7 @@ interface StatCard {
   gradient: string;
   icon: string;
   value: () => number | string;
-  subs: () => StatSubItem[];
+  desc: () => string;
 }
 
 @Component({
@@ -35,6 +35,7 @@ export class DashboardComponent implements OnInit {
   isLoading = signal(true);
   hasError = signal(false);
   stats = signal<DashboardData | null>(null);
+  todayDate = new Date();
 
   // ─── Derived stat cards ────────────────────────────────────────
   get statCards(): StatCard[] {
@@ -42,48 +43,68 @@ export class DashboardComponent implements OnInit {
     return [
       {
         label: 'Tổng số xe',
-        gradient: 'linear-gradient(135deg, rgba(59,130,246,0.25), rgba(99,102,241,0.25))',
-        icon: '🚌',
+        gradient: 'linear-gradient(135deg, rgba(59,130,246,0.15), rgba(99,102,241,0.15))',
+        icon: 'vehicle',
         value: () => s?.vehicles.total ?? '—',
-        subs: () => [
-          { label: 'Hoạt động', value: s?.vehicles.active ?? '—', dotColor: '#22c55e' },
-          { label: 'Bảo trì', value: s?.vehicles.maintenance ?? '—', dotColor: '#eab308' },
-          { label: 'Ngưng HĐ', value: s?.vehicles.outOfService ?? '—', dotColor: '#ef4444' }
-        ]
+        desc: () => `${s?.vehicles.active ?? 0} xe đang hoạt động`
       },
       {
-        label: 'Tài xế',
-        gradient: 'linear-gradient(135deg, rgba(139,92,246,0.25), rgba(236,72,153,0.25))',
-        icon: '👤',
+        label: 'Tổng tài xế',
+        gradient: 'linear-gradient(135deg, rgba(139,92,246,0.15), rgba(236,72,153,0.15))',
+        icon: 'driver',
         value: () => s?.drivers.total ?? '—',
-        subs: () => [
-          { label: 'Hoạt động', value: s?.drivers.active ?? '—', dotColor: '#22c55e' },
-          { label: 'Nghỉ/Khác', value: s?.drivers.inactive ?? '—', dotColor: '#94a3b8' }
-        ]
+        desc: () => `${s?.drivers.active ?? 0} tài xế đang làm việc`
       },
       {
         label: 'Chuyến hôm nay',
-        gradient: 'linear-gradient(135deg, rgba(245,158,11,0.25), rgba(234,88,12,0.25))',
-        icon: '🗺️',
+        gradient: 'linear-gradient(135deg, rgba(245,158,11,0.15), rgba(234,88,12,0.15))',
+        icon: 'trip',
         value: () => s?.tripsToday.total ?? '—',
-        subs: () => [
-          { label: 'Đang chạy', value: s?.tripsToday.inProgress ?? '—', dotColor: '#22c55e' }
-        ]
+        desc: () => `${s?.tripsToday.inProgress ?? 0} chuyến đang chạy`
       },
       {
         label: 'Đặt vé hôm nay',
-        gradient: 'linear-gradient(135deg, rgba(34,197,94,0.25), rgba(16,185,129,0.25))',
-        icon: '🎟️',
+        gradient: 'linear-gradient(135deg, rgba(34,197,94,0.15), rgba(16,185,129,0.15))',
+        icon: 'booking',
         value: () => s?.bookingsToday.total ?? '—',
-        subs: () => [
-          { label: 'Đã xác nhận', value: s?.bookingsToday.confirmed ?? '—', dotColor: '#22c55e' }
-        ]
-      },
+        desc: () => `${s?.bookingsToday.confirmed ?? 0} vé đã xác nhận`
+      }
     ];
   }
 
   get recentTrips(): Trip[] {
     return this.stats()?.recentTrips ?? [];
+  }
+
+  // ─── Progress Percentage Getters ──────────────────────────────
+  vehiclePercentActive(): number {
+    const s = this.stats();
+    if (!s || !s.vehicles.total) return 0;
+    return (s.vehicles.active / s.vehicles.total) * 100;
+  }
+
+  vehiclePercentMaintenance(): number {
+    const s = this.stats();
+    if (!s || !s.vehicles.total) return 0;
+    return (s.vehicles.maintenance / s.vehicles.total) * 100;
+  }
+
+  vehiclePercentOut(): number {
+    const s = this.stats();
+    if (!s || !s.vehicles.total) return 0;
+    return (s.vehicles.outOfService / s.vehicles.total) * 100;
+  }
+
+  driverPercentActive(): number {
+    const s = this.stats();
+    if (!s || !s.drivers.total) return 0;
+    return (s.drivers.active / s.drivers.total) * 100;
+  }
+
+  driverPercentInactive(): number {
+    const s = this.stats();
+    if (!s || !s.drivers.total) return 0;
+    return (s.drivers.inactive / s.drivers.total) * 100;
   }
 
   async ngOnInit(): Promise<void> {

@@ -1,19 +1,48 @@
 <!-- ─── Welcome ──────────────────────────────────────────────────── -->
 <div class="welcome-section">
-  <h1 class="welcome-title">
-    Xin chào, {{ authService.user()?.name ?? 'User' }}!
-  </h1>
-  <p class="welcome-subtitle">
-    Tổng quan hoạt động hệ thống Fleet Management hôm nay.
-  </p>
+  <div class="welcome-left">
+    <h1 class="welcome-title">
+      Xin chào, {{ authService.user()?.name ?? 'User' }}!
+    </h1>
+    <p class="welcome-subtitle">
+      Hệ thống vận tải thông minh | Trạng thái vận hành ngày hôm nay.
+    </p>
+  </div>
+  <div class="welcome-time-display">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="clock-icon">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+    <span>Hôm nay: {{ todayDate | date:'dd/MM/yyyy' }}</span>
+  </div>
 </div>
 
 <!-- ─── Stat Cards ───────────────────────────────────────────────── -->
 <div class="stats-grid">
   @for (card of statCards; track card.label) {
     <div class="stat-card">
-      <div class="stat-icon" [style.background]="card.gradient">
-        <span>{{ card.icon }}</span>
+      <div class="stat-icon-wrapper" [style.background]="card.gradient">
+        @switch (card.icon) {
+          @case ('vehicle') {
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="card-icon blue">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
+            </svg>
+          }
+          @case ('driver') {
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="card-icon purple">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+            </svg>
+          }
+          @case ('trip') {
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="card-icon amber">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z" />
+            </svg>
+          }
+          @case ('booking') {
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="card-icon emerald">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 010 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 010-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375z" />
+            </svg>
+          }
+        }
       </div>
       <div class="stat-info">
         @if (isLoading()) {
@@ -22,15 +51,7 @@
         } @else {
           <p class="stat-value">{{ card.value() }}</p>
           <p class="stat-label">{{ card.label }}</p>
-          <div class="stat-subs-list">
-            @for (sub of card.subs(); track sub.label) {
-              <p class="stat-sub">
-                <span class="stat-sub-dot" [style.background]="sub.dotColor"></span>
-                <span class="stat-sub-val">{{ sub.value }}</span>
-                <span class="stat-sub-lbl">{{ sub.label }}</span>
-              </p>
-            }
-          </div>
+          <p class="stat-desc">{{ card.desc() }}</p>
         }
       </div>
     </div>
@@ -41,71 +62,185 @@
 @if (hasError()) {
   <div class="error-banner">
     <span>⚠️</span>
-    <span>Không thể tải dữ liệu. </span>
+    <span>Không thể kết nối hoặc tải dữ liệu từ máy chủ.</span>
     <button class="retry-btn" (click)="loadStats()">Thử lại</button>
   </div>
 }
 
-<!-- ─── Recent Trips ─────────────────────────────────────────────── -->
-<div class="section-header">
-  <h2 class="section-title">Chuyến xe gần đây</h2>
-  <a routerLink="/trips" class="section-link">Xem tất cả →</a>
-</div>
-
-<div class="trips-card">
-  @if (isLoading()) {
-    <!-- Skeleton rows -->
-    @for (i of [1,2,3,4,5]; track i) {
-      <div class="trip-row skeleton-row">
-        <div class="skeleton skeleton-route"></div>
-        <div class="skeleton skeleton-badge"></div>
-        <div class="skeleton skeleton-text"></div>
-        <div class="skeleton skeleton-text"></div>
-      </div>
-    }
-  } @else if (recentTrips.length === 0) {
-    <div class="empty-state">
-      <span class="empty-icon">🚌</span>
-      <p>Chưa có chuyến xe nào.</p>
-    </div>
-  } @else {
-    <!-- Header row -->
-    <div class="trip-row trip-row-header">
-      <span>Tuyến đường</span>
-      <span>Trạng thái</span>
-      <span>Khởi hành</span>
-      <span>Xe / Tài xế</span>
+<!-- ─── Two Column Layout ────────────────────────────────────────── -->
+<div class="dashboard-grid-layout">
+  
+  <!-- Left Side: Recent Trips -->
+  <div class="layout-main">
+    <div class="section-header">
+      <h2 class="section-title">Chuyến xe mới nhất</h2>
+      <a routerLink="/trips" class="section-link">Xem tất cả →</a>
     </div>
 
-    @for (trip of recentTrips; track trip._id) {
-      <div class="trip-row">
-        <!-- Route -->
-        <div class="trip-route">
-          <span class="trip-route-name">{{ trip.route.name }}</span>
-          <span class="trip-route-leg">
-            {{ trip.route.origin }}
-            @if (trip.route.destination) { → {{ trip.route.destination }} }
-          </span>
+    <div class="trips-card">
+      @if (isLoading()) {
+        @for (i of [1,2,3,4,5]; track i) {
+          <div class="trip-row skeleton-row">
+            <div class="skeleton skeleton-route"></div>
+            <div class="skeleton skeleton-badge"></div>
+            <div class="skeleton skeleton-text"></div>
+            <div class="skeleton skeleton-text"></div>
+          </div>
+        }
+      } @else if (recentTrips.length === 0) {
+        <div class="empty-state">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="empty-icon-svg">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12.25 13.5h.008v.008h-.008V13.5zM15 13.5h.008v.008H15V13.5zM17.75 13.5h.008v.008h-.008V13.5zM12.25 16.5h.008v.008h-.008V16.5zM15 16.5h.008v.008H15V16.5zM17.75 16.5h.008v.008h-.008V16.5zM3.75 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+          </svg>
+          <p>Hiện tại chưa có chuyến đi nào được tạo.</p>
+        </div>
+      } @else {
+        <!-- Header row -->
+        <div class="trip-row trip-row-header">
+          <span>Lộ trình & Tuyến đường</span>
+          <span>Trạng thái</span>
+          <span>Giờ khởi hành</span>
+          <span>Tài xế & Phương tiện</span>
         </div>
 
-        <!-- Status badge -->
-        <span class="badge" [ngClass]="statusClass(trip.status)">
-          {{ statusLabel(trip.status) }}
-        </span>
+        @for (trip of recentTrips; track trip._id) {
+          <div class="trip-row">
+            <!-- Route -->
+            <div class="trip-route">
+              <span class="trip-route-name">{{ trip.route.name }}</span>
+              <span class="trip-route-leg">
+                <span class="loc-badge origin">A</span> {{ trip.route.origin }}
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="leg-arrow">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                </svg>
+                <span class="loc-badge dest">B</span> {{ trip.route.destination }}
+              </span>
+            </div>
 
-        <!-- Departure -->
-        <span class="trip-time">
-          {{ trip.scheduledDeparture | date:'dd/MM HH:mm' }}
-        </span>
+            <!-- Status badge -->
+            <div class="status-col">
+              <span class="badge" [ngClass]="statusClass(trip.status)">
+                <span class="badge-dot"></span>
+                {{ statusLabel(trip.status) }}
+              </span>
+              @if (trip.status === 'delayed' && trip.delayReason) {
+                <span class="delay-tooltip" [title]="trip.delayReason">
+                  Trễ {{ trip.delayDuration }}p
+                </span>
+              }
+            </div>
 
-        <!-- Vehicle / Driver -->
-        <div class="trip-resource">
-          <span class="trip-vehicle">{{ trip.vehicle.registrationNumber }}</span>
-          <span class="trip-driver">
-            {{ trip.driver.lastName }} {{ trip.driver.firstName }}
-          </span>
-        </div>
+            <!-- Departure -->
+            <div class="trip-time-col">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="time-col-icon">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span class="trip-time">
+                {{ trip.scheduledDeparture | date:'dd/MM HH:mm' }}
+              </span>
+            </div>
+
+            <!-- Vehicle / Driver -->
+            <div class="trip-resource">
+              <div class="driver-info">
+                <div class="driver-avatar-mini">{{ trip.driver.lastName.charAt(0) }}{{ trip.driver.firstName.charAt(0) }}</div>
+                <span class="trip-driver-name">
+                  {{ trip.driver.lastName }} {{ trip.driver.firstName }}
+                </span>
+              </div>
+              <span class="trip-vehicle-plate">
+                {{ trip.vehicle.registrationNumber }}
+              </span>
+            </div>
+          </div>
+        }
+      }
+    </div>
+  </div>
+
+  <!-- Right Side: Fleet Allocation & Quick Actions -->
+  <div class="layout-sidebar">
+    <!-- Quick Actions -->
+    <div class="sidebar-card actions-card">
+      <h3 class="sidebar-card-title">Thao tác nhanh</h3>
+      <div class="quick-actions-grid">
+        <a routerLink="/trips" class="action-tile">
+          <div class="tile-icon" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6;">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <span>Lên lịch chuyến</span>
+        </a>
+        <a routerLink="/bookings" class="action-tile">
+          <div class="tile-icon" style="background: rgba(34, 197, 94, 0.1); color: #22c55e;">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 010 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 010-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375z" />
+            </svg>
+          </div>
+          <span>Đặt vé nhanh</span>
+        </a>
+        <a routerLink="/vehicles" class="action-tile">
+          <div class="tile-icon" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
+            </svg>
+          </div>
+          <span>Thêm phương tiện</span>
+        </a>
+        <a routerLink="/drivers" class="action-tile">
+          <div class="tile-icon" style="background: rgba(236, 72, 153, 0.1); color: #ec4899;">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.647-6.374-1.766z" />
+            </svg>
+          </div>
+          <span>Thêm tài xế</span>
+        </a>
       </div>
-    }
-  }
+    </div>
+
+    <!-- Resource Status Chart Breakdown -->
+    <div class="sidebar-card chart-card">
+      <h3 class="sidebar-card-title">Phân bổ nguồn lực</h3>
+      
+      @if (isLoading()) {
+        <div class="skeleton-chart"></div>
+      } @else {
+        <!-- Vehicles Allocation -->
+        <div class="alloc-section">
+          <div class="alloc-header">
+            <span>Trạng thái phương tiện</span>
+            <span class="alloc-total">{{ stats()?.vehicles?.total }} Xe</span>
+          </div>
+          <div class="alloc-multi-bar">
+            <div class="bar-segment active" [style.width.%]="vehiclePercentActive()" title="Hoạt động"></div>
+            <div class="bar-segment maintenance" [style.width.%]="vehiclePercentMaintenance()" title="Bảo trì"></div>
+            <div class="bar-segment out" [style.width.%]="vehiclePercentOut()" title="Ngưng hoạt động"></div>
+          </div>
+          <div class="alloc-legend">
+            <div class="legend-item"><span class="dot active"></span> <span>Hoạt động ({{ stats()?.vehicles?.active }})</span></div>
+            <div class="legend-item"><span class="dot maintenance"></span> <span>Bảo trì ({{ stats()?.vehicles?.maintenance }})</span></div>
+            <div class="legend-item"><span class="dot out"></span> <span>Khác ({{ stats()?.vehicles?.outOfService }})</span></div>
+          </div>
+        </div>
+
+        <!-- Drivers Allocation -->
+        <div class="alloc-section" style="margin-top: 24px;">
+          <div class="alloc-header">
+            <span>Trạng thái tài xế</span>
+            <span class="alloc-total">{{ stats()?.drivers?.total }} Tài xế</span>
+          </div>
+          <div class="alloc-multi-bar">
+            <div class="bar-segment active" [style.width.%]="driverPercentActive()" title="Đang chạy"></div>
+            <div class="bar-segment inactive" [style.width.%]="driverPercentInactive()" title="Nghỉ / Rảnh"></div>
+          </div>
+          <div class="alloc-legend">
+            <div class="legend-item"><span class="dot active"></span> <span>Hoạt động ({{ stats()?.drivers?.active }})</span></div>
+            <div class="legend-item"><span class="dot inactive"></span> <span>Nghỉ/Rảnh ({{ stats()?.drivers?.inactive }})</span></div>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
 </div>

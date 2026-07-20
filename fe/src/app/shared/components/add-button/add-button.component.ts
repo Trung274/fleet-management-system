@@ -22,7 +22,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: .5rem 1.125rem;
+      padding: .625rem 1.25rem;
       border-radius: 10px;
       border: none;
       cursor: pointer;

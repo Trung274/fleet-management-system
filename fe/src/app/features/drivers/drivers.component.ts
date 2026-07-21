@@ -213,7 +213,7 @@ export class DriversComponent implements OnInit {
       this.currentPage.set(1);
       await this.loadDrivers();
     } catch (err: any) {
-      const msg = err?.error?.message ?? 'Có lỗi xảy ra';
+      const msg = err?.error?.error ?? err?.message ?? 'Có lỗi xảy ra';
       this.toastr.error(msg, 'Lỗi');
     } finally {
       this.isSubmitting.set(false);
@@ -244,7 +244,7 @@ export class DriversComponent implements OnInit {
       }
       await this.loadDrivers();
     } catch (err: any) {
-      this.toastr.error(err?.error?.message ?? 'Không thể xóa tài xế', 'Lỗi');
+      this.toastr.error(err?.error?.error ?? err?.message ?? 'Không thể xóa tài xế', 'Lỗi');
     } finally {
       this.isDeleting.set(null);
     }

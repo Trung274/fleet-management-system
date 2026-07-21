@@ -224,7 +224,7 @@ export class BookingsComponent implements OnInit {
       this.currentPage.set(1);
       await this.loadBookings();
     } catch (err: any) {
-      this.toastr.error(err?.error?.message ?? 'Không thể đặt vé', 'Lỗi');
+      this.toastr.error(err?.error?.error ?? err?.message ?? 'Không thể đặt vé', 'Lỗi');
     } finally {
       this.isSubmitting.set(false);
     }
@@ -238,7 +238,7 @@ export class BookingsComponent implements OnInit {
       this.toastr.success('Xác nhận đặt vé thành công', 'Thành công');
       await this.loadBookings();
     } catch (err: any) {
-      this.toastr.error(err?.error?.message ?? 'Không thể xác nhận', 'Lỗi');
+      this.toastr.error(err?.error?.error ?? err?.message ?? 'Không thể xác nhận', 'Lỗi');
     } finally {
       this.isActioning.set(false);
     }
@@ -266,7 +266,7 @@ export class BookingsComponent implements OnInit {
       this.closeCancelDialog();
       await this.loadBookings();
     } catch (err: any) {
-      this.toastr.error(err?.error?.message ?? 'Không thể hủy đặt vé', 'Lỗi');
+      this.toastr.error(err?.error?.error ?? err?.message ?? 'Không thể hủy đặt vé', 'Lỗi');
     } finally {
       this.isActioning.set(false);
     }
@@ -296,7 +296,7 @@ export class BookingsComponent implements OnInit {
       }
       await this.loadBookings();
     } catch (err: any) {
-      this.toastr.error(err?.error?.message ?? 'Không thể xóa đặt vé', 'Lỗi');
+      this.toastr.error(err?.error?.error ?? err?.message ?? 'Không thể xóa đặt vé', 'Lỗi');
     } finally {
       this.isDeleting.set(null);
     }

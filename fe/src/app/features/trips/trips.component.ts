@@ -259,7 +259,7 @@ export class TripsComponent implements OnInit {
       this.currentPage.set(1);
       await this.loadTrips();
     } catch (err: any) {
-      this.toastr.error(err?.error?.message ?? 'Có lỗi xảy ra', 'Lỗi');
+      this.toastr.error(err?.error?.error ?? err?.message ?? 'Có lỗi xảy ra', 'Lỗi');
     } finally {
       this.isSubmitting.set(false);
     }
@@ -289,7 +289,7 @@ export class TripsComponent implements OnInit {
       }
       await this.loadTrips();
     } catch (err: any) {
-      this.toastr.error(err?.error?.message ?? 'Không thể xóa chuyến đi', 'Lỗi');
+      this.toastr.error(err?.error?.error ?? err?.message ?? 'Không thể xóa chuyến đi', 'Lỗi');
     } finally {
       this.isDeleting.set(null);
     }
@@ -303,7 +303,7 @@ export class TripsComponent implements OnInit {
       this.toastr.success(`Chuyến "${trip.route.name}" đã xuất phát`, 'Thành công');
       await this.loadTrips();
     } catch (err: any) {
-      this.toastr.error(err?.error?.message ?? 'Không thể khởi hành chuyến đi', 'Lỗi');
+      this.toastr.error(err?.error?.error ?? err?.message ?? 'Không thể khởi hành chuyến đi', 'Lỗi');
     } finally {
       this.isActioning.set(false);
     }
@@ -364,7 +364,7 @@ export class TripsComponent implements OnInit {
       this.closeActionDialog();
       await this.loadTrips();
     } catch (err: any) {
-      this.toastr.error(err?.error?.message ?? 'Thao tác thất bại', 'Lỗi');
+      this.toastr.error(err?.error?.error ?? err?.message ?? 'Thao tác thất bại', 'Lỗi');
     } finally {
       this.isActioning.set(false);
     }

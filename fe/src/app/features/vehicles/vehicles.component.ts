@@ -175,7 +175,7 @@ export class VehiclesComponent implements OnInit {
       this.closeModal();
       await this.loadVehicles();
     } catch (err: any) {
-      const msg = err?.error?.message ?? 'Có lỗi xảy ra';
+      const msg = err?.error?.error ?? err?.message ?? 'Có lỗi xảy ra';
       this.toastr.error(msg, 'Lỗi');
     } finally {
       this.isSubmitting.set(false);
@@ -207,7 +207,7 @@ export class VehiclesComponent implements OnInit {
       }
       await this.loadVehicles();
     } catch (err: any) {
-      const msg = err?.error?.message ?? 'Không thể xóa xe';
+      const msg = err?.error?.error ?? err?.message ?? 'Không thể xóa xe';
       this.toastr.error(msg, 'Lỗi');
     } finally {
       this.isDeleting.set(null);

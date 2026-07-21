@@ -203,7 +203,7 @@ export class RoutesComponent implements OnInit {
       this.currentPage.set(1);
       await this.loadRoutes();
     } catch (err: any) {
-      const msg = err?.error?.message ?? 'Có lỗi xảy ra';
+      const msg = err?.error?.error ?? err?.message ?? 'Có lỗi xảy ra';
       this.toastr.error(msg, 'Lỗi');
     } finally {
       this.isSubmitting.set(false);
@@ -234,7 +234,7 @@ export class RoutesComponent implements OnInit {
       }
       await this.loadRoutes();
     } catch (err: any) {
-      this.toastr.error(err?.error?.message ?? 'Không thể xóa tuyến đường', 'Lỗi');
+      this.toastr.error(err?.error?.error ?? err?.message ?? 'Không thể xóa tuyến đường', 'Lỗi');
     } finally {
       this.isDeleting.set(null);
     }

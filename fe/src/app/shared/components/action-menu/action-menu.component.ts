@@ -24,7 +24,7 @@ export interface MenuAction {
       </button>
 
       @if (isOpen()) {
-        <div class="dropdown">
+        <div class="dropdown" [class.dropup]="isDropup()">
           @for (item of actions; track item.label) {
             <button
               class="dropdown-item"
@@ -60,14 +60,17 @@ export interface MenuAction {
     }
 
     .dropdown {
-      position: absolute; right: 0; top: calc(100% + 4px); z-index: 200;
+      position: fixed; z-index: 9999;
       background: #1e293b; border: 1px solid rgba(255,255,255,.1);
       border-radius: 12px; padding: 4px;
       min-width: 160px;
       box-shadow: 0 8px 32px rgba(0,0,0,.5);
       animation: pop .12s ease-out;
     }
-    @keyframes pop { from { opacity:0; transform:scale(.95) translateY(-4px); } to { opacity:1; transform:scale(1) translateY(0); } }
+    @keyframes pop {
+      from { opacity: 0; transform: scale(.95) translateY(-4px); }
+      to   { opacity: 1; transform: scale(1)   translateY(0);    }
+    }
 
     .dropdown-item {
       width: 100%; display: flex; align-items: center; gap: 8px;
@@ -99,7 +102,13 @@ export interface MenuAction {
 export class ActionMenuComponent {
   @Input() actions: MenuAction[] = [];
 
-  isOpen = signal(false);
+  isOpen  = signal(false);
+  isDropup = signal(false);
+
+  /** Estimated dropdown height based on action count */
+  private get estimatedHeight(): number {
+    return this.actions.length * 34 + 12;
+  }
 
   constructor(private el: ElementRef) {}
 
@@ -112,7 +121,46 @@ export class ActionMenuComponent {
 
   toggle(e: Event): void {
     e.stopPropagation();
-    this.isOpen.update(v => !v);
+    const willOpen = !this.isOpen();
+    if (willOpen) {
+      this.positionDropdown();
+    }
+    this.isOpen.set(willOpen);
+  }
+
+  /** Calculate & apply fixed position so the dropdown is always fully visible */
+  private positionDropdown(): void {
+    const trigger = this.el.nativeElement.querySelector('.menu-trigger') as HTMLElement;
+    if (!trigger) return;
+
+    const rect = trigger.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const shouldDropup =
+      spaceBelow < this.estimatedHeight + 8 && rect.top > spaceBelow;
+
+    this.isDropup.set(shouldDropup);
+
+    // Apply coordinates after Angular renders the dropdown element
+    requestAnimationFrame(() => {
+      const dropdown = this.el.nativeElement.querySelector('.dropdown') as HTMLElement;
+      if (!dropdown) return;
+
+      const dropW = dropdown.offsetWidth || 160;
+      const dropH = dropdown.offsetHeight || this.estimatedHeight;
+
+      // Align right edge with trigger right edge, clamp to viewport
+      let left = rect.right - dropW;
+      if (left < 8) left = 8;
+      if (left + dropW > window.innerWidth - 8) left = window.innerWidth - dropW - 8;
+
+      dropdown.style.left = `${left}px`;
+
+      if (shouldDropup) {
+        dropdown.style.top = `${rect.top - dropH - 4}px`;
+      } else {
+        dropdown.style.top = `${rect.bottom + 4}px`;
+      }
+    });
   }
 
   run(item: MenuAction, e: Event): void {

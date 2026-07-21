@@ -29,7 +29,7 @@ const seedDrivers = async () => {
         address: '123 Đường Xuân Thủy, Cầu Giấy, Hà Nội',
         licenseNumber: 'DL123456',
         licenseType: 'Class B',
-        licenseExpiry: new Date('2026-06-30'),
+        licenseExpiry: new Date('2028-06-30'),
         employmentStatus: 'active',
         hireDate: new Date('2020-01-15'),
         emergencyContact: {
@@ -48,7 +48,7 @@ const seedDrivers = async () => {
         address: '456 Đường Lạch Tray, Ngô Quyền, Hải Phòng',
         licenseNumber: 'DL234567',
         licenseType: 'Class A',
-        licenseExpiry: new Date('2027-03-15'),
+        licenseExpiry: new Date('2028-03-15'),
         employmentStatus: 'active',
         hireDate: new Date('2021-05-10'),
         emergencyContact: {
@@ -67,7 +67,7 @@ const seedDrivers = async () => {
         address: '789 Đường Lê Thánh Tông, Hạ Long, Quảng Ninh',
         licenseNumber: 'DL345678',
         licenseType: 'Class B',
-        licenseExpiry: new Date('2026-09-20'),
+        licenseExpiry: new Date('2028-09-20'),
         employmentStatus: 'on-leave',
         hireDate: new Date('2019-08-20'),
         emergencyContact: {
@@ -86,7 +86,7 @@ const seedDrivers = async () => {
         address: '321 Đường Trường Chinh, Đống Đa, Hà Nội',
         licenseNumber: 'DL456789',
         licenseType: 'Class C',
-        licenseExpiry: new Date('2026-12-31'),
+        licenseExpiry: new Date('2028-12-31'),
         employmentStatus: 'suspended',
         hireDate: new Date('2018-03-12'),
         emergencyContact: {
@@ -105,7 +105,7 @@ const seedDrivers = async () => {
         address: '654 Đường Nguyễn Văn Linh, Lê Chân, Hải Phòng',
         licenseNumber: 'DL567890',
         licenseType: 'Class A',
-        licenseExpiry: new Date('2027-05-10'),
+        licenseExpiry: new Date('2028-05-10'),
         employmentStatus: 'active',
         hireDate: new Date('2015-11-01'),
         emergencyContact: {
@@ -124,7 +124,7 @@ const seedDrivers = async () => {
         address: '987 Đường Trần Hưng Đạo, Ninh Bình',
         licenseNumber: 'DL678901',
         licenseType: 'Class B',
-        licenseExpiry: new Date('2027-08-15'),
+        licenseExpiry: new Date('2028-08-15'),
         employmentStatus: 'terminated',
         hireDate: new Date('2017-06-15'),
         terminationDate: new Date('2025-12-31'),
@@ -144,7 +144,7 @@ const seedDrivers = async () => {
         address: '147 Đường Hai Bà Trưng, Nam Định',
         licenseNumber: 'DL789012',
         licenseType: 'Class C',
-        licenseExpiry: new Date('2027-11-30'),
+        licenseExpiry: new Date('2028-11-30'),
         employmentStatus: 'active',
         hireDate: new Date('2022-09-01'),
         emergencyContact: {

@@ -160,6 +160,11 @@
   border-color: rgba(59, 130, 246, 0.5);
 }
 
+.filter-select option {
+  background: #1e293b;
+  color: #f1f5f9;
+}
+
 /* ─── Table Card ──────────────────────────────────────────────────── */
 .table-card {
   background: rgba(255, 255, 255, 0.03);
@@ -555,6 +560,11 @@
   background-position: right 10px center;
   background-size: 14px;
   padding-right: 32px;
+}
+
+.form-select option {
+  background: #1e293b;
+  color: #f1f5f9;
 }
 
 .form-textarea { resize: vertical; min-height: 80px; }

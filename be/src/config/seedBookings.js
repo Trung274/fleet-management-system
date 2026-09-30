@@ -3,7 +3,21 @@ const mongoose = require('mongoose');
 const Trip = require('../models/Trip.model');
 const Seat = require('../models/Seat.model');
 const Booking = require('../models/Booking.model');
-const Vehicle = require('../models/Vehicle.model');
+const Itinerary = require('../models/Itinerary.model');
+require('../models/Vehicle.model');
+require('../models/Route.model');
+
+// Sample multi-trip itineraries, keyed by the route code of their second leg
+const ITINERARY_SAMPLES = {
+  'TB-ND-01': {
+    passenger: { name: 'Vũ Thị Hoa', phone: '0906666666', email: 'thi.hoa@example.com' },
+    status: 'confirmed'
+  },
+  'HP-HL-01': {
+    passenger: { name: 'Đặng Quang Huy', phone: '0907777777', idNumber: '034567890123' },
+    status: 'pending'
+  }
+};
 
 // Connect to database
 mongoose.connect(process.env.MONGODB_URI)
@@ -17,24 +31,31 @@ const seedBookings = async () => {
   try {
     console.log('🌱 Starting bookings seed...');
 
-    // Clear existing data
+    // Clear existing data (itineraries reference bookings, so clear them too)
+    await Itinerary.deleteMany({});
     await Booking.deleteMany({});
     await Seat.deleteMany({});
-    console.log('✓ Cleared existing seats and bookings');
+    console.log('✓ Cleared existing itineraries, seats and bookings');
 
-    // Find first 2 scheduled trips with populated vehicles
-    const trips = await Trip.find({ status: 'scheduled' }).populate('vehicle').limit(2);
+    // Every trip that can still take bookings gets a seat map
+    const bookableTrips = await Trip.find({ status: { $in: ['scheduled', 'delayed'] } })
+      .populate('vehicle')
+      .populate('route')
+      .sort('scheduledDeparture');
 
-    if (trips.length === 0) {
+    if (bookableTrips.length === 0) {
       console.log('⚠️  No scheduled trips found. Run npm run seed:trips first.');
       process.exit(0);
     }
 
-    console.log(`✓ Found ${trips.length} trip(s) to seed seats for`);
+    console.log(`✓ Found ${bookableTrips.length} trip(s) to seed seats for`);
+
+    // Single-trip sample bookings go on the 2 earliest scheduled trips
+    const trips = bookableTrips.filter(t => t.status === 'scheduled').slice(0, 2);
 
     const allSeats = [];
 
-    for (const trip of trips) {
+    for (const trip of bookableTrips) {
       const capacity = trip.vehicle.capacity;
       const seats = [];
       for (let i = 1; i <= capacity; i++) {
@@ -151,12 +172,65 @@ const seedBookings = async () => {
     const createdBookings = await Booking.insertMany(bookingsData);
     console.log(`✓ Created ${createdBookings.length} sample bookings`);
 
+    // ─── Multi-trip itineraries ────────────────────────────────────
+    // For each second leg, the first leg is the latest trip arriving at its origin before it departs
+    const createdItineraries = [];
+    for (const leg2 of bookableTrips) {
+      const sample = ITINERARY_SAMPLES[leg2.route.code];
+      if (!sample) continue;
+
+      const leg1 = bookableTrips
+        .filter(t =>
+          t.route.destination === leg2.route.origin &&
+          t.scheduledArrival <= leg2.scheduledDeparture
+        )
+        .sort((a, b) => b.scheduledArrival - a.scheduledArrival)[0];
+      if (!leg1) {
+        console.log(`⚠️  No connecting first leg found for ${leg2.route.code} — skipped`);
+        continue;
+      }
+
+      const itineraryId = new mongoose.Types.ObjectId();
+      const bookedAt = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const seatStatus = sample.status === 'confirmed' ? 'booked' : 'reserved';
+      const legBookings = [];
+
+      for (const trip of [leg1, leg2]) {
+        // Seat 5: clear of the priority seats and the single-trip bookings above
+        const seat = allSeats.find(s => String(s.trip) === String(trip._id) && s.seatNumber === 5);
+        legBookings.push({
+          trip: trip._id,
+          seat: seat._id,
+          itinerary: itineraryId,
+          passenger: sample.passenger,
+          fare: trip.fare,
+          status: sample.status,
+          bookedAt,
+          ...(sample.status === 'confirmed' && { confirmedAt: new Date() })
+        });
+        await Seat.findByIdAndUpdate(seat._id, { status: seatStatus });
+      }
+
+      const legs = await Booking.insertMany(legBookings);
+      const itinerary = await Itinerary.create({
+        _id: itineraryId,
+        passenger: sample.passenger,
+        legs: legs.map(l => l._id),
+        status: sample.status,
+        totalFare: legs.reduce((sum, l) => sum + (l.fare || 0), 0),
+        ...(sample.status === 'confirmed' && { confirmedAt: new Date() })
+      });
+      createdItineraries.push(itinerary);
+      console.log(`  ✓ Itinerary ${leg1.route.origin} → ${leg1.route.destination} → ${leg2.route.destination} (${sample.status})`);
+    }
+    console.log(`✓ Created ${createdItineraries.length} sample itineraries`);
+
     console.log('\n🎉 Bookings seed completed successfully!');
     console.log('\n📊 Summary:');
-    console.log(`   Trips seeded: ${trips.length}`);
+    console.log(`   Trips with seats: ${bookableTrips.length}`);
     console.log(`   Total seats created: ${allSeats.length}`);
-    console.log(`   Bookings created: ${createdBookings.length}`);
-    console.log('   Status breakdown: 2 confirmed, 2 pending, 1 cancelled');
+    console.log(`   Single-trip bookings: ${createdBookings.length} (2 confirmed, 2 pending, 1 cancelled)`);
+    console.log(`   Itineraries: ${createdItineraries.length} (each with 2 leg bookings)`);
 
     process.exit(0);
   } catch (error) {

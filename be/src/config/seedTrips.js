@@ -22,11 +22,15 @@ const seedTrips = async () => {
     console.log('✓ Cleared old trip data');
 
     // Get active routes, vehicles, and drivers
-    const routes = await Route.find({ status: 'active' }).limit(3);
-    const vehicles = await Vehicle.find({ status: 'active' }).limit(3);
+    // Look routes up by code so adding new routes doesn't shift which ones are used
+    const activeRoutes = await Route.find({ status: 'active' });
+    const routeByCode = Object.fromEntries(activeRoutes.map(r => [r.code, r]));
+    const routes = ['HN-HP-01', 'HN-TB-01', 'HN-NB-01'].map(code => routeByCode[code]).filter(Boolean);
+    // 15B-888.99 is reserved for the Hải Phòng - Hạ Long itinerary leg below
+    const vehicles = await Vehicle.find({ status: 'active', registrationNumber: { $ne: '15B-888.99' } }).limit(3);
     const drivers = await Driver.find({ employmentStatus: 'active' }).limit(4);
 
-    if (routes.length === 0 || vehicles.length === 0 || drivers.length === 0) {
+    if (routes.length < 3 || vehicles.length < 3 || drivers.length < 4) {
       console.error('❌ Not enough active resources. Please seed routes, vehicles, and drivers first.');
       process.exit(1);
     }
@@ -50,7 +54,7 @@ const seedTrips = async () => {
       actualArrival: new Date(yesterday.getTime() + 9 * 60 * 60 * 1000 + 10 * 60 * 1000), // 9:10 AM
       status: 'completed',
       passengerCount: 42,
-      fare: 50.00,
+      fare: 150000,
       notes: 'Chuyến đi hoàn thành tốt đẹp'
     });
 
@@ -65,7 +69,7 @@ const seedTrips = async () => {
       actualArrival: new Date(yesterday.getTime() + 14 * 60 * 60 * 1000 + 55 * 60 * 1000), // 2:55 PM
       status: 'completed',
       passengerCount: 38,
-      fare: 45.00,
+      fare: 120000,
       notes: 'Đến sớm hơn dự kiến'
     });
 
@@ -78,7 +82,7 @@ const seedTrips = async () => {
       scheduledArrival: new Date(yesterday.getTime() + 19 * 60 * 60 * 1000), // 7:00 PM
       status: 'cancelled',
       cancellationReason: 'Xe gặp sự cố hỏng hóc giữa đường',
-      fare: 50.00
+      fare: 45000
     });
 
     // Trip 4: In-progress trip (today, started 30 minutes ago)
@@ -92,7 +96,7 @@ const seedTrips = async () => {
       scheduledArrival: inOneHour,
       actualDeparture: new Date(thirtyMinutesAgo.getTime() + 2 * 60 * 1000), // 2 minutes late
       status: 'in-progress',
-      fare: 50.00,
+      fare: 150000,
       notes: 'Đang di chuyển trên tuyến'
     });
 
@@ -106,7 +110,7 @@ const seedTrips = async () => {
       scheduledDeparture: inTwoHours,
       scheduledArrival: inThreeHours,
       status: 'scheduled',
-      fare: 45.00
+      fare: 120000
     });
 
     // Trip 6: Scheduled trip (today, in 4 hours)
@@ -119,7 +123,7 @@ const seedTrips = async () => {
       scheduledDeparture: inFourHours,
       scheduledArrival: inFiveHours,
       status: 'scheduled',
-      fare: 50.00
+      fare: 45000
     });
 
     // Trip 7: Delayed trip (today, in 6 hours)
@@ -134,7 +138,7 @@ const seedTrips = async () => {
       status: 'delayed',
       delayReason: 'Tắc đường tại trạm thu phí',
       delayDuration: 30,
-      fare: 50.00
+      fare: 150000
     });
 
     // Trip 8: Scheduled trip (tomorrow morning)
@@ -147,7 +151,7 @@ const seedTrips = async () => {
       scheduledDeparture: new Date(tomorrow.getTime() + 7 * 60 * 60 * 1000), // 7:00 AM
       scheduledArrival: new Date(tomorrow.getTime() + 8 * 60 * 60 * 1000), // 8:00 AM
       status: 'scheduled',
-      fare: 45.00
+      fare: 120000
     });
 
     // Trip 9: Scheduled trip (tomorrow afternoon)
@@ -158,7 +162,7 @@ const seedTrips = async () => {
       scheduledDeparture: new Date(tomorrow.getTime() + 15 * 60 * 60 * 1000), // 3:00 PM
       scheduledArrival: new Date(tomorrow.getTime() + 16 * 60 * 60 * 1000), // 4:00 PM
       status: 'scheduled',
-      fare: 50.00
+      fare: 45000
     });
 
     // Trip 10: Scheduled trip (day after tomorrow)
@@ -171,7 +175,7 @@ const seedTrips = async () => {
       scheduledDeparture: new Date(dayAfterTomorrow.getTime() + 9 * 60 * 60 * 1000), // 9:00 AM
       scheduledArrival: new Date(dayAfterTomorrow.getTime() + 10 * 60 * 60 * 1000), // 10:00 AM
       status: 'scheduled',
-      fare: 50.00
+      fare: 150000
     });
 
     // Trip 11: Completed trip with high passenger count (2 days ago)
@@ -187,7 +191,7 @@ const seedTrips = async () => {
       actualArrival: new Date(twoDaysAgo.getTime() + 11 * 60 * 60 * 1000 + 5 * 60 * 1000), // 11:05 AM
       status: 'completed',
       passengerCount: 48,
-      fare: 45.00,
+      fare: 120000,
       notes: 'Chuyến đi đầy đủ khách'
     });
 
@@ -202,8 +206,77 @@ const seedTrips = async () => {
       scheduledArrival: new Date(threeDaysAgo.getTime() + 17 * 60 * 60 * 1000), // 5:00 PM
       status: 'cancelled',
       cancellationReason: 'Tài xế nghỉ ốm đột xuất',
-      fare: 50.00
+      fare: 45000
     });
+
+    // ─── Connecting trips for multi-trip itineraries (3 days from now) ───
+    // Each leg uses a different vehicle and driver; arrival follows route.estimatedDuration.
+    // Seeded bookings for these legs are created in seedBookings.js.
+    const inThreeDays = new Date(today);
+    inThreeDays.setDate(inThreeDays.getDate() + 3);
+    const at = (hours, minutes = 0) => new Date(inThreeDays.getTime() + (hours * 60 + minutes) * 60 * 1000);
+    const plusMinutes = (date, minutes) => new Date(date.getTime() + minutes * 60 * 1000);
+    const vehicleByReg = Object.fromEntries(
+      (await Vehicle.find({ status: 'active' })).map(v => [v.registrationNumber, v])
+    );
+    const tbnd = routeByCode['TB-ND-01'];
+    const hphl = routeByCode['HP-HL-01'];
+    const hpVehicle = vehicleByReg['15B-888.99'];
+
+    if (tbnd && hphl && hpVehicle) {
+      // Itinerary A: Hà Nội → Thái Bình → Nam Định (60 min transfer at Bến xe Thái Bình)
+      const legA1Departure = at(7);
+      const legA2Departure = at(11);
+      trips.push({
+        route: routes[1]._id,
+        vehicle: vehicles[1]._id,
+        driver: drivers[1]._id,
+        scheduledDeparture: legA1Departure,
+        scheduledArrival: plusMinutes(legA1Departure, routes[1].estimatedDuration), // 10:00
+        status: 'scheduled',
+        fare: 120000,
+        notes: 'Chặng 1 của hành trình Hà Nội → Nam Định'
+      });
+      trips.push({
+        route: tbnd._id,
+        vehicle: vehicles[2]._id,
+        driver: drivers[2]._id,
+        scheduledDeparture: legA2Departure,
+        scheduledArrival: plusMinutes(legA2Departure, tbnd.estimatedDuration), // 12:00
+        status: 'scheduled',
+        fare: 60000,
+        notes: 'Chặng 2 của hành trình Hà Nội → Nam Định'
+      });
+
+      // Itinerary B: Hà Nội → Hải Phòng → Hạ Long (60 min transfer at Bến xe Niệm Nghĩa)
+      // Leg 1 is delayed 45 min, leaving only 15 min to transfer → itinerary shows "at risk"
+      const legB1Departure = at(8);
+      const legB2Departure = at(10, 30);
+      trips.push({
+        route: routes[0]._id,
+        vehicle: vehicles[0]._id,
+        driver: drivers[0]._id,
+        scheduledDeparture: legB1Departure,
+        scheduledArrival: plusMinutes(legB1Departure, routes[0].estimatedDuration), // 09:30
+        status: 'delayed',
+        delayReason: 'Tai nạn trên cao tốc, đang phân luồng',
+        delayDuration: 45,
+        fare: 150000,
+        notes: 'Chặng 1 của hành trình Hà Nội → Hạ Long'
+      });
+      trips.push({
+        route: hphl._id,
+        vehicle: hpVehicle._id,
+        driver: drivers[3]._id,
+        scheduledDeparture: legB2Departure,
+        scheduledArrival: plusMinutes(legB2Departure, hphl.estimatedDuration), // 12:00
+        status: 'scheduled',
+        fare: 90000,
+        notes: 'Chặng 2 của hành trình Hà Nội → Hạ Long'
+      });
+    } else {
+      console.log('⚠️  Connecting routes or vehicle 15B-888.99 missing — skipped itinerary trips');
+    }
 
     const createdTrips = await Trip.insertMany(trips);
     console.log('✓ Created sample trips');

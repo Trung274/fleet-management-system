@@ -77,6 +77,30 @@ const seedRoutes = async () => {
         serviceType: 'express',
         estimatedDuration: 150,
         discontinuedDate: new Date('2025-12-31')
+      },
+      // Connecting routes: origin matches another route's destination exactly,
+      // so they can be chained into multi-trip itineraries
+      {
+        name: 'Thái Bình - Nam Định',
+        code: 'TB-ND-01',
+        description: 'Tuyến nối tiếp từ Bến xe Thái Bình, dùng cho hành trình Hà Nội → Thái Bình → Nam Định',
+        origin: 'Bến xe Thái Bình',
+        destination: 'Bến xe Nam Định',
+        distance: 25.5,
+        status: 'active',
+        serviceType: 'local',
+        estimatedDuration: 60
+      },
+      {
+        name: 'Hải Phòng - Hạ Long',
+        code: 'HP-HL-01',
+        description: 'Tuyến nối tiếp từ Bến xe Niệm Nghĩa, dùng cho hành trình Hà Nội → Hải Phòng → Hạ Long',
+        origin: 'Bến xe Niệm Nghĩa',
+        destination: 'Bến xe Bãi Cháy',
+        distance: 70.0,
+        status: 'active',
+        serviceType: 'express',
+        estimatedDuration: 90
       }
     ]);
 
@@ -311,6 +335,80 @@ const seedRoutes = async () => {
         estimatedArrivalTime: 570,  // 09:30
         estimatedDepartureTime: 570,
         coordinates: { latitude: 20.8550, longitude: 106.6750 }
+      }
+    );
+
+    // Stops for TB-ND-01 (Thái Bình - Nam Định)
+    routeStops.push(
+      {
+        route: routes[5]._id,
+        stopName: 'Bến xe Thái Bình',
+        stopCode: 'TB-03',
+        address: 'Đường Tỉnh 39A, Hoàng Diệu, Thái Bình',
+        sequence: 1,
+        distanceFromStart: 0,
+        estimatedArrivalTime: 660,  // 11:00
+        estimatedDepartureTime: 660,
+        coordinates: { latitude: 20.4500, longitude: 106.3350 }
+      },
+      {
+        route: routes[5]._id,
+        stopName: 'Cầu Tân Đệ',
+        stopCode: 'TD-01',
+        address: 'Quốc lộ 10, Vũ Thư, Thái Bình',
+        sequence: 2,
+        distanceFromStart: 15.0,
+        estimatedArrivalTime: 685,  // 11:25
+        estimatedDepartureTime: 687,
+        coordinates: { latitude: 20.4420, longitude: 106.2050 }
+      },
+      {
+        route: routes[5]._id,
+        stopName: 'Bến xe Nam Định',
+        stopCode: 'ND-02',
+        address: 'Đường Văn Cao, Nam Định',
+        sequence: 3,
+        distanceFromStart: 25.5,
+        estimatedArrivalTime: 720,  // 12:00
+        estimatedDepartureTime: 720,
+        coordinates: { latitude: 20.4280, longitude: 106.1720 }
+      }
+    );
+
+    // Stops for HP-HL-01 (Hải Phòng - Hạ Long)
+    routeStops.push(
+      {
+        route: routes[6]._id,
+        stopName: 'Bến xe Niệm Nghĩa',
+        stopCode: 'NN-02',
+        address: '275 Trần Nguyên Hãn, Niệm Nghĩa, Lê Chân, Hải Phòng',
+        sequence: 1,
+        distanceFromStart: 0,
+        estimatedArrivalTime: 630,  // 10:30
+        estimatedDepartureTime: 630,
+        coordinates: { latitude: 20.8520, longitude: 106.6710 }
+      },
+      {
+        route: routes[6]._id,
+        stopName: 'Cầu Bạch Đằng',
+        stopCode: 'BD-01',
+        address: 'Cao tốc Hạ Long - Hải Phòng, Quảng Yên, Quảng Ninh',
+        sequence: 2,
+        distanceFromStart: 35.0,
+        estimatedArrivalTime: 675,  // 11:15
+        estimatedDepartureTime: 675,
+        coordinates: { latitude: 20.9200, longitude: 106.8150 }
+      },
+      {
+        route: routes[6]._id,
+        stopName: 'Bến xe Bãi Cháy',
+        stopCode: 'BC-01',
+        address: 'Đường Hạ Long, Bãi Cháy, Hạ Long, Quảng Ninh',
+        sequence: 3,
+        distanceFromStart: 70.0,
+        estimatedArrivalTime: 720,  // 12:00
+        estimatedDepartureTime: 720,
+        coordinates: { latitude: 20.9580, longitude: 107.0450 }
       }
     );
 

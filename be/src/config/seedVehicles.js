@@ -85,6 +85,17 @@ const seedVehicles = async () => {
         color: 'Vàng',
         vin: '6HGBH41JXMN109191',
         notes: 'Đã thanh lý do hết niên hạn sử dụng'
+      },
+      {
+        registrationNumber: '15B-888.99',
+        make: 'Thaco',
+        model: 'TB79S',
+        year: 2022,
+        capacity: 29,
+        status: 'active',
+        color: 'Xanh dương',
+        vin: '7HGBH41JXMN109192',
+        notes: 'Xe đặt tại Hải Phòng, chạy tuyến Hải Phòng - Hạ Long'
       }
     ]);
 

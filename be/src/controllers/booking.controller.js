@@ -152,7 +152,11 @@ const getAllBookings = asyncHandler(async (req, res, next) => {
 
   const [bookings, total] = await Promise.all([
     Booking.find(filter)
-      .populate('trip', 'scheduledDeparture scheduledArrival status fare route')
+      .populate({
+        path: 'trip',
+        select: 'scheduledDeparture scheduledArrival status fare route',
+        populate: { path: 'route', select: 'name code origin destination' }
+      })
       .populate('seat', 'seatNumber type status')
       .sort(sort)
       .skip(skip)

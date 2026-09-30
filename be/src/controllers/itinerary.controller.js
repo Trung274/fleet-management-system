@@ -257,7 +257,11 @@ const getAllItineraries = asyncHandler(async (req, res, next) => {
         path: 'legs',
         select: 'trip seat status fare',
         populate: [
-          { path: 'trip', select: 'scheduledDeparture scheduledArrival status' },
+          {
+            path: 'trip',
+            select: 'scheduledDeparture scheduledArrival status route',
+            populate: { path: 'route', select: 'code origin destination' }
+          },
           { path: 'seat', select: 'seatNumber' }
         ]
       })

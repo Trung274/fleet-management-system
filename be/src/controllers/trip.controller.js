@@ -30,17 +30,23 @@ const checkVehicleAvailability = async (vehicleId, scheduledDeparture, scheduled
   return overlappingTrips.length === 0;
 };
 
+// Minimum rest time (minutes) a driver needs between two trips
+const DRIVER_REST_MINUTES = parseInt(process.env.DRIVER_REST_MINUTES) || 30;
+
 // Helper function to check driver availability
+// Existing trips must end at least DRIVER_REST_MINUTES before the new departure
+// and start at least DRIVER_REST_MINUTES after the new arrival
 const checkDriverAvailability = async (driverId, scheduledDeparture, scheduledArrival, excludeTripId = null) => {
+  const restMs = DRIVER_REST_MINUTES * 60 * 1000;
+  const windowStart = new Date(new Date(scheduledDeparture).getTime() - restMs);
+  const windowEnd = new Date(new Date(scheduledArrival).getTime() + restMs);
+
   const query = {
     driver: driverId,
     status: { $nin: ['cancelled', 'completed'] },
-    $or: [
-      { scheduledDeparture: { $lte: scheduledDeparture }, scheduledArrival: { $gt: scheduledDeparture } },
-      { scheduledDeparture: { $lt: scheduledArrival }, scheduledArrival: { $gte: scheduledArrival } },
-      { scheduledDeparture: { $gte: scheduledDeparture }, scheduledArrival: { $lte: scheduledArrival } },
-      { scheduledDeparture: { $lte: scheduledDeparture }, scheduledArrival: { $gte: scheduledArrival } }
-    ]
+    // Overlap with [departure - rest, arrival + rest]
+    scheduledDeparture: { $lt: windowEnd },
+    scheduledArrival: { $gt: windowStart }
   };
 
   if (excludeTripId) {
@@ -123,7 +129,7 @@ exports.createTrip = asyncHandler(async (req, res, next) => {
   // Check driver availability
   const driverAvailable = await checkDriverAvailability(driver, depTime, arrTime);
   if (!driverAvailable) {
-    return next(new ErrorResponse('Driver is not available for the selected time slot', 400));
+    return next(new ErrorResponse(`Driver is not available for the selected time slot (requires ${DRIVER_REST_MINUTES} minutes rest between trips)`, 400));
   }
 
   // Create trip
@@ -310,7 +316,7 @@ exports.updateTrip = asyncHandler(async (req, res, next) => {
 
     const driverAvailable = await checkDriverAvailability(req.body.driver, scheduledDeparture, scheduledArrival, trip._id);
     if (!driverAvailable) {
-      return next(new ErrorResponse('Driver is not available for the selected time slot', 400));
+      return next(new ErrorResponse(`Driver is not available for the selected time slot (requires ${DRIVER_REST_MINUTES} minutes rest between trips)`, 400));
     }
   }
 
@@ -339,7 +345,7 @@ exports.updateTrip = asyncHandler(async (req, res, next) => {
 
     const driverAvailable = await checkDriverAvailability(driverId, scheduledDeparture, scheduledArrival, trip._id);
     if (!driverAvailable) {
-      return next(new ErrorResponse('Driver is not available for the new time slot', 400));
+      return next(new ErrorResponse(`Driver is not available for the new time slot (requires ${DRIVER_REST_MINUTES} minutes rest between trips)`, 400));
     }
   }
 

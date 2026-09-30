@@ -5,6 +5,7 @@ require('dotenv').config();
 
 const Trip = require('../models/Trip.model');
 const Route = require('../models/Route.model');
+require('../models/RouteStop.model'); // Register model for route.stops populate
 const Vehicle = require('../models/Vehicle.model');
 const Driver = require('../models/Driver.model');
 const User = require('../models/User.model');
@@ -202,6 +203,73 @@ describe('Trip API Tests', () => {
 
       expect(response.status).toBe(400);
       expect(response.body.error).toMatch(/not available/i);
+    });
+
+    test('[Negative] Create trip without enough driver rest time', async () => {
+      const day = new Date();
+      day.setDate(day.getDate() + 30);
+
+      // First trip 08:00–09:00
+      await request(app)
+        .post('/api/v1/trips')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          route: testRoute._id,
+          vehicle: testVehicle2._id,
+          driver: testDriver2._id,
+          scheduledDeparture: new Date(new Date(day).setHours(8, 0, 0, 0)),
+          scheduledArrival: new Date(new Date(day).setHours(9, 0, 0, 0)),
+          fare: 999
+        });
+
+      // Second trip starts only 10 minutes after the first ends
+      const response = await request(app)
+        .post('/api/v1/trips')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          route: testRoute._id,
+          vehicle: testVehicle._id,
+          driver: testDriver2._id,
+          scheduledDeparture: new Date(new Date(day).setHours(9, 10, 0, 0)),
+          scheduledArrival: new Date(new Date(day).setHours(10, 10, 0, 0)),
+          fare: 999
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toMatch(/rest between trips/i);
+    });
+
+    test('[Integration] Create trip with exactly enough driver rest time', async () => {
+      const day = new Date();
+      day.setDate(day.getDate() + 31);
+
+      // First trip 08:00–09:00
+      await request(app)
+        .post('/api/v1/trips')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          route: testRoute._id,
+          vehicle: testVehicle2._id,
+          driver: testDriver2._id,
+          scheduledDeparture: new Date(new Date(day).setHours(8, 0, 0, 0)),
+          scheduledArrival: new Date(new Date(day).setHours(9, 0, 0, 0)),
+          fare: 999
+        });
+
+      // Second trip starts 30 minutes (default rest) after the first ends
+      const response = await request(app)
+        .post('/api/v1/trips')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          route: testRoute._id,
+          vehicle: testVehicle._id,
+          driver: testDriver2._id,
+          scheduledDeparture: new Date(new Date(day).setHours(9, 30, 0, 0)),
+          scheduledArrival: new Date(new Date(day).setHours(10, 30, 0, 0)),
+          fare: 999
+        });
+
+      expect(response.status).toBe(201);
     });
 
     test('[Negative] Create trip with past departure time', async () => {

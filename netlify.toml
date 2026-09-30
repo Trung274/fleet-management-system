@@ -1,0 +1,18 @@
+# Netlify deploys the Angular frontend only (the Express backend is hosted separately).
+# The API URL is baked in at build time from fe/src/environments/environment.production.ts,
+# so no Netlify environment variables are needed for it.
+
+[build]
+  base = "fe"
+  command = "npm run build"
+  publish = "dist/bus-management/browser" # relative to base
+
+[build.environment]
+  # Angular 21 requires Node ^20.19 || ^22.12 || >=24
+  NODE_VERSION = "22"
+
+# Single-page app: let Angular's router handle every path (e.g. refreshing /trips)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

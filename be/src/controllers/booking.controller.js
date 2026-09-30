@@ -72,6 +72,9 @@ const confirmBooking = asyncHandler(async (req, res, next) => {
   if (!booking) {
     return next(new ErrorResponse('Booking not found', 404));
   }
+  if (booking.itinerary) {
+    return next(new ErrorResponse('Booking is part of an itinerary; manage it via /itineraries', 400));
+  }
   if (booking.status !== 'pending') {
     return next(new ErrorResponse('Only pending bookings can be confirmed', 400));
   }
@@ -96,6 +99,9 @@ const cancelBooking = asyncHandler(async (req, res, next) => {
   const booking = await Booking.findById(req.params.id);
   if (!booking) {
     return next(new ErrorResponse('Booking not found', 404));
+  }
+  if (booking.itinerary) {
+    return next(new ErrorResponse('Booking is part of an itinerary; manage it via /itineraries', 400));
   }
   if (booking.status === 'cancelled') {
     return next(new ErrorResponse('Booking is already cancelled', 400));
@@ -198,6 +204,9 @@ const deleteBooking = asyncHandler(async (req, res, next) => {
   const booking = await Booking.findById(req.params.id);
   if (!booking) {
     return next(new ErrorResponse('Booking not found', 404));
+  }
+  if (booking.itinerary) {
+    return next(new ErrorResponse('Booking is part of an itinerary; manage it via /itineraries', 400));
   }
 
   // Release seat if booking was active

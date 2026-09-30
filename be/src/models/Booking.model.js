@@ -35,6 +35,12 @@ const bookingSchema = new mongoose.Schema({
     required: [true, 'Please provide seat reference'],
     index: true
   },
+  // Set when this booking is one leg of a multi-trip itinerary
+  itinerary: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Itinerary',
+    index: true
+  },
   passenger: {
     type: passengerSchema,
     required: [true, 'Passenger information is required']
@@ -82,3 +88,4 @@ bookingSchema.pre('save', function(next) {
 });
 
 module.exports = mongoose.model('Booking', bookingSchema);
+module.exports.passengerSchema = passengerSchema;

@@ -156,6 +156,7 @@
 @media (max-width:600px) { .form-grid-2 { grid-template-columns:1fr; } }
 .form-group { display:flex; flex-direction:column; gap:4px; }
 .form-label { font-size:.8rem; font-weight:600; color:#94a3b8; }
+.field-warning { font-size:.78rem; color:#fbbf24; margin:2px 0 0; }
 .required { color:#f87171; }
 .form-input {
   padding:.5rem .75rem; background:rgba(255,255,255,.05);

@@ -334,9 +334,12 @@
                   (change)="updateFormField('driver', $any($event.target).value)" required>
                   <option value="">— Chọn tài xế —</option>
                   @for (d of drivers(); track d._id) {
-                    <option [value]="d._id">{{ d.firstName }} {{ d.lastName }} · {{ d.licenseNumber }}</option>
+                    <option [value]="d._id" [disabled]="isLicenseExpired(d)">{{ driverOptionLabel(d) }}</option>
                   }
                 </select>
+                @if (licenseWarning(); as warning) {
+                  <p class="field-warning">{{ warning }}</p>
+                }
               </div>
             </div>
           </div>

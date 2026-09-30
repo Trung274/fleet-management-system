@@ -82,7 +82,14 @@
                 <span class="license-badge">{{ driver.licenseType }}</span>
                 <p class="text-muted small">{{ driver.licenseNumber }}</p>
               </td>
-              <td class="text-muted">{{ formatDate(driver.licenseExpiry) }}</td>
+              <td>
+                <span class="text-muted">{{ formatDate(driver.licenseExpiry) }}</span>
+                @if (licenseStatus(driver) !== 'valid') {
+                  <span class="license-expiry-badge" [class]="'license-expiry-badge license-' + licenseStatus(driver)">
+                    {{ licenseStatusLabel(driver) }}
+                  </span>
+                }
+              </td>
               <td>
                 <span class="status-badge" [class]="'status-' + driver.employmentStatus">
                   {{ getStatusLabel(driver.employmentStatus) }}

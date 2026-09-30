@@ -103,6 +103,14 @@
   border: 1px solid rgba(99, 102, 241, 0.3);
 }
 
+/* ─── License expiry badge ────────────────────────────────────── */
+.license-expiry-badge {
+  display: block; width: fit-content; margin-top: 4px; padding: 2px 8px; border-radius: 999px;
+  font-size: 0.68rem; font-weight: 700; white-space: nowrap;
+}
+.license-expiring { background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
+.license-expired  { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+
 /* ─── Status badge ────────────────────────────────────────────── */
 .status-badge {
   display: inline-block; padding: 4px 10px; border-radius: 999px;

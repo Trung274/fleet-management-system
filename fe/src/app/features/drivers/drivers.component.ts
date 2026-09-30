@@ -9,6 +9,9 @@ import {
   LicenseType,
   DriverCreatePayload,
   DriverUpdatePayload,
+  LicenseStatus,
+  getLicenseStatus,
+  licenseDaysLeft,
 } from '../../core/models/driver.model';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { ActionMenuComponent, MenuAction } from '../../shared/components/action-menu/action-menu.component';
@@ -258,6 +261,17 @@ export class DriversComponent implements OnInit {
   formatDate(dateStr: string | undefined): string {
     if (!dateStr) return '—';
     return new Date(dateStr).toLocaleDateString('vi-VN');
+  }
+
+  licenseStatus(d: Driver): LicenseStatus {
+    return getLicenseStatus(d.licenseExpiry);
+  }
+
+  licenseStatusLabel(d: Driver): string {
+    const days = licenseDaysLeft(d.licenseExpiry);
+    if (days < 0) return 'Đã hết hạn';
+    if (days === 0) return 'Hết hạn hôm nay';
+    return `Còn ${days} ngày`;
   }
 
   /** Min date for licenseExpiry: today (backend accepts today or future) */

@@ -13,7 +13,7 @@ import {
 } from '../../core/models/trip.model';
 import { BusRoute } from '../../core/models/route.model';
 import { Vehicle } from '../../core/models/vehicle.model';
-import { Driver } from '../../core/models/driver.model';
+import { Driver, getLicenseStatus, licenseValidUntil } from '../../core/models/driver.model';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { ActionMenuComponent, MenuAction } from '../../shared/components/action-menu/action-menu.component';
 import { SearchInputComponent } from '../../shared/components/search-input/search-input.component';
@@ -97,6 +97,16 @@ export class TripsComponent implements OnInit {
 
   // ─── Computed ──────────────────────────────────────────────────
   isViewMode = computed(() => this.modalMode() === 'view');
+
+  /** Warn when the selected driver's license expires before the trip ends (backend rejects it too) */
+  licenseWarning = computed(() => {
+    const { driver: driverId, scheduledArrival } = this.form();
+    const driver = this.drivers().find(d => d._id === driverId);
+    if (!driver || !scheduledArrival) return null;
+    const validUntil = licenseValidUntil(driver.licenseExpiry);
+    if (validUntil >= new Date(scheduledArrival)) return null;
+    return `Bằng lái của tài xế hết hạn ngày ${validUntil.toLocaleDateString('vi-VN')}, trước khi chuyến kết thúc. Hãy chọn tài xế khác.`;
+  });
   modalTitle = computed(() => {
     switch (this.modalMode()) {
       case 'create': return 'Lên Lịch Chuyến Đi';
@@ -373,6 +383,19 @@ export class TripsComponent implements OnInit {
   // ─── Helpers ───────────────────────────────────────────────────
   getStatusLabel(status: TripStatus): string {
     return this.tripStatuses.find(s => s.value === status)?.label ?? status;
+  }
+
+  isLicenseExpired(d: Driver): boolean {
+    return getLicenseStatus(d.licenseExpiry) === 'expired';
+  }
+
+  driverOptionLabel(d: Driver): string {
+    const base = `${d.firstName} ${d.lastName} · ${d.licenseNumber}`;
+    switch (getLicenseStatus(d.licenseExpiry)) {
+      case 'expired':  return `${base} · GPLX đã hết hạn`;
+      case 'expiring': return `${base} · GPLX hết hạn ${licenseValidUntil(d.licenseExpiry).toLocaleDateString('vi-VN')}`;
+      default:         return base;
+    }
   }
 
   formatDatetime(iso: string | undefined): string {

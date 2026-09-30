@@ -14,6 +14,10 @@ connectDB();
 
 const app = express();
 
+// Render (and most hosts) put the app behind one reverse proxy; trust it so
+// req.ip is the real client IP and rate limiting is per user, not per proxy
+app.set('trust proxy', 1);
+
 // Security Middleware
 app.use(helmet());
 const allowedOrigins = (process.env.CORS_ORIGIN || '*').split(',').map(o => o.trim());

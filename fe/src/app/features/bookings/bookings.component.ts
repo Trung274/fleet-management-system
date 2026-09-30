@@ -307,9 +307,10 @@ export class BookingsComponent implements OnInit {
     return this.bookingStatuses.find(s => s.value === status)?.label ?? status;
   }
 
-  canConfirm(b: Booking): boolean  { return b.status === 'pending'; }
-  canCancel(b: Booking): boolean   { return b.status !== 'cancelled'; }
-  canDelete(b: Booking): boolean   { return b.status === 'cancelled'; }
+  // Itinerary legs are confirmed/cancelled together from the Itineraries page
+  canConfirm(b: Booking): boolean  { return !b.itinerary && b.status === 'pending'; }
+  canCancel(b: Booking): boolean   { return !b.itinerary && b.status !== 'cancelled'; }
+  canDelete(b: Booking): boolean   { return !b.itinerary && b.status === 'cancelled'; }
 
   formatDatetime(iso?: string): string {
     if (!iso) return '—';

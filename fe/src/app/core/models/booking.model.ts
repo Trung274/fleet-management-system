@@ -20,6 +20,8 @@ export interface Booking {
     vehicle: { _id: string; registrationNumber: string; make: string; model: string };
   };
   seat: Seat;
+  /** Set when this booking is one leg of a multi-trip itinerary */
+  itinerary?: string;
   passenger: BookingPassenger;
   status: BookingStatus;
   fare?: number;

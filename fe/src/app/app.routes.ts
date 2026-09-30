@@ -60,6 +60,13 @@ export const routes: Routes = [
             (m) => m.BookingsComponent,
           ),
       },
+      {
+        path: 'itineraries',
+        loadComponent: () =>
+          import('./features/itineraries/itineraries.component').then(
+            (m) => m.ItinerariesComponent,
+          ),
+      },
     ],
   },
   { path: '**', redirectTo: 'dashboard' },

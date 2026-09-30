@@ -30,6 +30,7 @@ export class SidebarComponent {
     { label: 'Tuyến đường', route: '/routes', icon: 'route' },
     { label: 'Chuyến đi', route: '/trips', icon: 'trip' },
     { label: 'Đặt vé', route: '/bookings', icon: 'booking' },
+    { label: 'Hành trình', route: '/itineraries', icon: 'itinerary' },
   ];
 
   get userInitial(): string {

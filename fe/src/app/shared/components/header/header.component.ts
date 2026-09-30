@@ -59,6 +59,7 @@ export class HeaderComponent {
     if (url.startsWith('/routes')) return 'Quản lý tuyến đường';
     if (url.startsWith('/trips')) return 'Quản lý chuyến đi';
     if (url.startsWith('/bookings')) return 'Quản lý đặt vé';
+    if (url.startsWith('/itineraries')) return 'Hành trình nhiều chặng';
     return 'Hệ thống điều hành';
   }
 

@@ -102,6 +102,9 @@
                 <span class="status-badge" [class]="'status-' + booking.status">
                   {{ getStatusLabel(booking.status) }}
                 </span>
+                @if (booking.itinerary) {
+                  <span class="itinerary-tag" title="Chặng của hành trình nhiều chặng — quản lý ở trang Hành trình">Hành trình</span>
+                }
               </td>
 
               <!-- Fare -->
@@ -280,6 +283,10 @@
             <span class="banner-time">Hủy lúc {{ formatDatetime(b.cancelledAt) }}</span>
           }
         </div>
+
+        @if (b.itinerary) {
+          <p class="hint-text">Vé này là một chặng của hành trình nhiều chặng. Xác nhận hoặc hủy ở trang Hành trình.</p>
+        }
 
         <!-- Chuyến đi -->
         <div class="view-section">

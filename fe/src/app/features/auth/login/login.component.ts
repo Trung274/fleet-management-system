@@ -83,10 +83,8 @@ export class LoginComponent implements OnInit, OnDestroy {
 
     try {
       await this.authService.login({ email, password, rememberMe });
+      // Navigation is handled by the isAuthenticated() effect in the constructor
       this.toastr.success('Đăng nhập thành công!', 'Thành công');
-      const returnUrl =
-        this.route.snapshot.queryParamMap.get('returnUrl') ?? '/dashboard';
-      setTimeout(() => this.router.navigateByUrl(returnUrl), 300);
     } catch {
       const errMsg = this.authService.error() ?? 'Đăng nhập thất bại';
       this.toastr.error(errMsg, 'Lỗi');

@@ -528,6 +528,111 @@ describe('Trip API Tests', () => {
   });
 
   // Security Tests
+  describe('[Negative] Driver license expiry', () => {
+    let expiringDriver, expiredDriver;
+    let tripOnExpiryDayId;
+
+    // License expires on `expiryDay` (calendar date); it is valid through the end of that day
+    const expiryDay = new Date();
+    expiryDay.setDate(expiryDay.getDate() + 45);
+    const on = (offsetDays, hours) => {
+      const d = new Date(expiryDay);
+      d.setDate(d.getDate() + offsetDays);
+      d.setHours(hours, 0, 0, 0);
+      return d;
+    };
+    const createTrip = (driver, departure, arrival) => request(app)
+      .post('/api/v1/trips')
+      .set('Authorization', `Bearer ${authToken}`)
+      .send({
+        route: testRoute._id,
+        vehicle: testVehicle._id,
+        driver,
+        scheduledDeparture: departure,
+        scheduledArrival: arrival,
+        fare: 999
+      });
+
+    beforeAll(async () => {
+      await Driver.deleteMany({ licenseNumber: /^LIC-TEST-/ });
+      expiringDriver = await Driver.create({
+        firstName: 'Expiring', lastName: 'License',
+        email: 'expiring.license@test.com', phone: '0900000101',
+        licenseNumber: 'LIC-TEST-EXPIRING', licenseType: 'Class B',
+        licenseExpiry: new Date(Date.UTC(expiryDay.getFullYear(), expiryDay.getMonth(), expiryDay.getDate())),
+        employmentStatus: 'active'
+      });
+      // Already expired — bypass the model validator that only allows today or later
+      expiredDriver = new Driver({
+        firstName: 'Expired', lastName: 'License',
+        email: 'expired.license@test.com', phone: '0900000102',
+        licenseNumber: 'LIC-TEST-EXPIRED', licenseType: 'Class B',
+        licenseExpiry: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+        employmentStatus: 'active'
+      });
+      await expiredDriver.save({ validateBeforeSave: false });
+    });
+
+    afterAll(async () => {
+      await Driver.deleteMany({ licenseNumber: /^LIC-TEST-/ });
+    });
+
+    test('[Integration] Trip ending on the expiry day is allowed', async () => {
+      const response = await createTrip(expiringDriver._id, on(0, 8), on(0, 10));
+
+      expect(response.status).toBe(201);
+      tripOnExpiryDayId = response.body.data._id;
+    });
+
+    test('[Negative] Overnight trip ending after the expiry day returns 400', async () => {
+      const response = await createTrip(expiringDriver._id, on(0, 22), on(1, 1));
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toMatch(/license expires/i);
+    });
+
+    test('[Negative] Extending arrival past the expiry day returns 400', async () => {
+      const response = await request(app)
+        .put(`/api/v1/trips/${tripOnExpiryDayId}`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ scheduledArrival: on(1, 2) });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toMatch(/license expires/i);
+    });
+
+    test('[Negative] Assigning a driver whose license expires before the trip returns 400', async () => {
+      const created = await createTrip(testDriver._id, on(2, 10), on(2, 11));
+      expect(created.status).toBe(201);
+
+      const response = await request(app)
+        .put(`/api/v1/trips/${created.body.data._id}`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ driver: expiringDriver._id });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toMatch(/license expires/i);
+    });
+
+    test('[Negative] Starting a trip whose driver license has expired returns 400', async () => {
+      // Scheduled while the license was still valid — inserted directly to simulate that
+      const trip = await Trip.create({
+        route: testRoute._id, vehicle: testVehicle._id, driver: expiredDriver._id,
+        scheduledDeparture: new Date(Date.now() + 60 * 60 * 1000),
+        scheduledArrival: new Date(Date.now() + 2 * 60 * 60 * 1000),
+        fare: 999
+      });
+
+      const response = await request(app)
+        .post(`/api/v1/trips/${trip._id}/start`)
+        .set('Authorization', `Bearer ${authToken}`);
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toMatch(/license expires.*assign another driver/i);
+      expect((await Trip.findById(trip._id)).status).toBe('scheduled');
+    });
+  });
+
   describe('[Security] Authentication and Authorization', () => {
     test('[Security] Require authentication for trip access', async () => {
       const response = await request(app)

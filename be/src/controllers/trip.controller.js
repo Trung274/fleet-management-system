@@ -70,6 +70,29 @@ const validateStatusTransition = (currentStatus, newStatus) => {
   return validTransitions[currentStatus]?.includes(newStatus) || false;
 };
 
+// A license is valid through the end of its expiry date.
+// licenseExpiry is stored as UTC midnight of the calendar date (FE sends YYYY-MM-DD),
+// so take the UTC date parts and end that day in server local time.
+const licenseValidUntil = (licenseExpiry) => {
+  const d = new Date(licenseExpiry);
+  return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 23, 59, 59, 999);
+};
+
+const formatDate = (date) => date.toLocaleDateString('en-GB'); // DD/MM/YYYY
+
+// Returns an error message if the driver's license expires before the trip ends, otherwise null
+const checkLicenseCoversTrip = (driverDoc, tripEnd) => {
+  const validUntil = licenseValidUntil(driverDoc.licenseExpiry);
+  if (validUntil >= tripEnd) return null;
+  return `Driver's license expires on ${formatDate(validUntil)}, before the trip ends`;
+};
+
+// Arrival including any reported delay
+const expectedArrival = (trip) => {
+  const delayMinutes = trip.status === 'delayed' ? (trip.delayDuration || 0) : 0;
+  return new Date(trip.scheduledArrival.getTime() + delayMinutes * 60 * 1000);
+};
+
 // @desc    Create new trip
 // @route   POST /api/v1/trips
 // @access  Private (trips:create)
@@ -118,6 +141,12 @@ exports.createTrip = asyncHandler(async (req, res, next) => {
   
   if (arrTime <= depTime) {
     return next(new ErrorResponse('Scheduled arrival must be after scheduled departure', 400));
+  }
+
+  // Driver's license must stay valid until the trip ends (covers overnight trips too)
+  const licenseError = checkLicenseCoversTrip(driverDoc, arrTime);
+  if (licenseError) {
+    return next(new ErrorResponse(licenseError, 400));
   }
 
   // Check vehicle availability
@@ -349,6 +378,16 @@ exports.updateTrip = asyncHandler(async (req, res, next) => {
     }
   }
 
+  // Re-check the license when the driver or the arrival time changes
+  if (req.body.driver || req.body.scheduledArrival) {
+    const driverDoc = await Driver.findById(req.body.driver || trip.driver);
+    const scheduledArrival = req.body.scheduledArrival ? new Date(req.body.scheduledArrival) : trip.scheduledArrival;
+    const licenseError = driverDoc && checkLicenseCoversTrip(driverDoc, scheduledArrival);
+    if (licenseError) {
+      return next(new ErrorResponse(licenseError, 400));
+    }
+  }
+
   // Whitelist updatable fields — prevent clients from directly setting internal fields
   // like actualDeparture, actualArrival (those are set by /start, /complete actions only)
   const allowedFields = ['route', 'vehicle', 'driver', 'scheduledDeparture', 'scheduledArrival',
@@ -411,6 +450,13 @@ exports.startTrip = asyncHandler(async (req, res, next) => {
   // Verify status is scheduled or delayed
   if (trip.status !== 'scheduled' && trip.status !== 'delayed') {
     return next(new ErrorResponse('Can only start scheduled or delayed trips', 400));
+  }
+
+  // The trip may have been scheduled before the license expired — check again before departure
+  const driverDoc = await Driver.findById(trip.driver);
+  const licenseError = driverDoc && checkLicenseCoversTrip(driverDoc, expectedArrival(trip));
+  if (licenseError) {
+    return next(new ErrorResponse(`${licenseError}. Assign another driver before starting`, 400));
   }
 
   // Update trip

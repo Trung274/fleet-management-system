@@ -23,14 +23,19 @@ import { AuthService } from '../../core/services/auth.service';
     </div>
   `,
   styles: [`
+    /* Fixed to the viewport so only .shell-content scrolls — the sidebar and header stay put */
     .app-shell {
       display: flex;
-      min-height: 100vh;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
       background: #0a0f1e;
       position: relative;
     }
     .shell-right {
       flex: 1;
+      min-width: 0;
+      min-height: 0;
       display: flex;
       flex-direction: column;
       overflow: hidden;

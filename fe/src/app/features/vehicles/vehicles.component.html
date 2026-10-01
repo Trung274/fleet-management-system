@@ -54,7 +54,8 @@
             <th>Hãng / Model</th>
             <th>Năm SX</th>
             <th>Sức chứa</th>
-            <th>Màu</th>
+            <th>Đăng kiểm</th>
+            <th>Bảo dưỡng tiếp theo</th>
             <th>Trạng thái</th>
             <th>Hành động</th>
           </tr>
@@ -75,7 +76,28 @@
               <td>
                 <span class="capacity-badge">{{ v.capacity }} chỗ</span>
               </td>
-              <td class="text-muted">{{ v.color || '—' }}</td>
+              <td>
+                @if (v.inspectionExpiry) {
+                  <span class="text-muted">{{ v.inspectionExpiry | date:'dd/MM/yyyy' }}</span>
+                  @if (inspectionStatus(v) !== 'valid') {
+                    <span class="expiry-badge" [ngClass]="'expiry-' + inspectionStatus(v)">{{ inspectionLabel(v) }}</span>
+                  }
+                } @else {
+                  <span class="text-muted">—</span>
+                }
+              </td>
+              <td>
+                @if (v.nextMaintenanceDue) {
+                  <span class="text-muted">{{ v.nextMaintenanceDue | date:'dd/MM/yyyy' }}</span>
+                  @if (maintenanceStatus(v) === 'overdue') {
+                    <span class="expiry-badge expiry-expired">Quá hạn</span>
+                  } @else if (maintenanceStatus(v) === 'due') {
+                    <span class="expiry-badge expiry-expiring">Sắp đến hạn</span>
+                  }
+                } @else {
+                  <span class="text-muted">—</span>
+                }
+              </td>
               <td>
                 <span class="status-badge" [ngClass]="statusClass(v.status)">
                   {{ statusLabel(v.status) }}
@@ -173,6 +195,22 @@
             <div class="view-field">
               <label>VIN</label>
               <p class="view-value mono">{{ v.vin || '—' }}</p>
+            </div>
+            <div class="view-field">
+              <label>Hạn đăng kiểm</label>
+              <p class="view-value">{{ v.inspectionExpiry ? (v.inspectionExpiry | date:'dd/MM/yyyy') : '—' }}</p>
+            </div>
+            <div class="view-field">
+              <label>Chu kỳ bảo dưỡng</label>
+              <p class="view-value">{{ v.maintenanceIntervalDays ? v.maintenanceIntervalDays + ' ngày' : '—' }}</p>
+            </div>
+            <div class="view-field">
+              <label>Bảo dưỡng gần nhất</label>
+              <p class="view-value">{{ v.lastMaintenanceAt ? (v.lastMaintenanceAt | date:'dd/MM/yyyy') : '—' }}</p>
+            </div>
+            <div class="view-field">
+              <label>Bảo dưỡng tiếp theo</label>
+              <p class="view-value">{{ v.nextMaintenanceDue ? (v.nextMaintenanceDue | date:'dd/MM/yyyy') : '—' }}</p>
             </div>
             <div class="view-field full-width">
               <label>Ghi chú</label>
@@ -304,6 +342,27 @@
                   [(ngModel)]="form.vin"
                   name="vin"
                 />
+              </div>
+
+              <!-- Inspection -->
+              <div class="form-field">
+                <label for="vehicle-inspection" class="form-label">Hạn đăng kiểm</label>
+                <input id="vehicle-inspection" type="date" class="form-input"
+                  [(ngModel)]="form.inspectionExpiry" name="inspectionExpiry" />
+              </div>
+
+              <!-- Maintenance interval -->
+              <div class="form-field">
+                <label for="vehicle-interval" class="form-label">Chu kỳ bảo dưỡng (ngày)</label>
+                <input id="vehicle-interval" type="number" min="1" class="form-input"
+                  [(ngModel)]="form.maintenanceIntervalDays" name="maintenanceIntervalDays" />
+              </div>
+
+              <!-- Last maintenance -->
+              <div class="form-field">
+                <label for="vehicle-last-maintenance" class="form-label">Bảo dưỡng gần nhất</label>
+                <input id="vehicle-last-maintenance" type="date" class="form-input"
+                  [(ngModel)]="form.lastMaintenanceAt" name="lastMaintenanceAt" />
               </div>
 
               <!-- Notes -->

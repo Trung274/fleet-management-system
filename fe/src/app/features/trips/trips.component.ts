@@ -6,6 +6,9 @@ import { AuthService } from '../../core/services/auth.service';
 import { TripService } from '../../core/services/trip.service';
 import { RouteService } from '../../core/services/route.service';
 import { VehicleService } from '../../core/services/vehicle.service';
+import { MaintenanceService } from '../../core/services/maintenance.service';
+import { MaintenanceRecord } from '../../core/models/maintenance.model';
+import { validUntilEndOfDay } from '../../core/utils/expiry';
 import { DriverService } from '../../core/services/driver.service';
 import { SeatService } from '../../core/services/seat.service';
 import { Seat } from '../../core/models/seat.model';
@@ -48,6 +51,9 @@ export class TripsComponent implements OnInit {
   readonly allowReadSeats = computed(() => this.auth.can('seats', 'read'));
   readonly allowInitSeats = computed(() => this.auth.can('seats', 'update'));
   private seatService = inject(SeatService);
+  private maintenanceService = inject(MaintenanceService);
+  /** Scheduled / ongoing maintenance, to flag vehicles in the trip form */
+  maintenance = signal<MaintenanceRecord[]>([]);
 
   // ─── Data ──────────────────────────────────────────────────────
   trips      = signal<Trip[]>([]);
@@ -124,6 +130,29 @@ export class TripsComponent implements OnInit {
     if (validUntil >= new Date(scheduledArrival)) return null;
     return `Bằng lái của tài xế hết hạn ngày ${validUntil.toLocaleDateString('vi-VN')}, trước khi chuyến kết thúc. Hãy chọn tài xế khác.`;
   });
+  /** Vehicle id → why it cannot run the chosen time slot (inspection / maintenance); backend rejects it too */
+  vehicleBlockers = computed(() => {
+    const { scheduledDeparture, scheduledArrival } = this.form();
+    const blockers = new Map<string, string>();
+    if (!scheduledDeparture || !scheduledArrival) return blockers;
+    const dep = new Date(scheduledDeparture);
+    const arr = new Date(scheduledArrival);
+    for (const v of this.vehicles()) {
+      if (v.inspectionExpiry && validUntilEndOfDay(v.inspectionExpiry) < arr) {
+        blockers.set(v._id, `hết hạn đăng kiểm ${validUntilEndOfDay(v.inspectionExpiry).toLocaleDateString('vi-VN')}`);
+        continue;
+      }
+      const m = this.maintenance().find(r =>
+        r.vehicle._id === v._id && new Date(r.scheduledStart) < arr && new Date(r.scheduledEnd) > dep
+      );
+      if (m) blockers.set(v._id, `bảo dưỡng ${this.formatDatetime(m.scheduledStart)} – ${this.formatDatetime(m.scheduledEnd)}`);
+    }
+    return blockers;
+  });
+  vehicleWarning = computed(() => {
+    const reason = this.vehicleBlockers().get(this.form().vehicle);
+    return reason ? `Xe không chạy được trong khung giờ này: ${reason}. Hãy chọn xe khác.` : null;
+  });
   modalTitle = computed(() => {
     switch (this.modalMode()) {
       case 'create': return 'Lên Lịch Chuyến Đi';
@@ -181,6 +210,12 @@ export class TripsComponent implements OnInit {
         this.vehicleService.getAll({ limit: 200, status: 'active' }),
         this.driverService.getAll({ limit: 200, status: 'active' }),
       ]);
+      // Planned maintenance lets the form flag vehicles that are in the garage at the chosen time
+      if (this.auth.can('maintenance', 'read')) {
+        this.maintenanceService.getAll({ limit: 200, status: 'scheduled,in-progress' })
+          .then(m => this.maintenance.set(m.data))
+          .catch(() => {});
+      }
       this.routes.set(r.data);
       this.vehicles.set(v.data);
       this.drivers.set(d.data);

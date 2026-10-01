@@ -1,3 +1,5 @@
+import { ExpiryStatus, validUntilEndOfDay, expiryDaysLeft, expiryStatus } from '../utils/expiry';
+
 export type EmploymentStatus = 'active' | 'on-leave' | 'suspended' | 'terminated';
 export type LicenseType = 'Class A' | 'Class B' | 'Class C';
 
@@ -84,32 +86,14 @@ export interface DriverQueryParams {
 }
 
 // ─── License expiry ───────────────────────────────────────────────
-export type LicenseStatus = 'valid' | 'expiring' | 'expired';
+// Shared rule in core/utils/expiry.ts (also used for vehicle inspection)
+
+export type LicenseStatus = ExpiryStatus;
 
 /** Licenses expiring within this many days are flagged */
 export const LICENSE_EXPIRING_DAYS = 30;
 
-/**
- * A license is valid through the end of its expiry date.
- * licenseExpiry is UTC midnight of the calendar date, so read the date part and
- * end that day in local time — same rule as the backend trip checks.
- */
-export function licenseValidUntil(licenseExpiry: string): Date {
-  const [y, m, d] = licenseExpiry.substring(0, 10).split('-').map(Number);
-  return new Date(y, m - 1, d, 23, 59, 59, 999);
-}
-
-/** Whole days left until the license expires (0 = expires today, negative = expired) */
-export function licenseDaysLeft(licenseExpiry: string, now = new Date()): number {
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const expiryDay = licenseValidUntil(licenseExpiry);
-  expiryDay.setHours(0, 0, 0, 0);
-  return Math.round((expiryDay.getTime() - today.getTime()) / (24 * 60 * 60 * 1000));
-}
-
-export function getLicenseStatus(licenseExpiry: string, now = new Date()): LicenseStatus {
-  const daysLeft = licenseDaysLeft(licenseExpiry, now);
-  if (daysLeft < 0) return 'expired';
-  if (daysLeft <= LICENSE_EXPIRING_DAYS) return 'expiring';
-  return 'valid';
-}
+export const licenseValidUntil = (licenseExpiry: string): Date => validUntilEndOfDay(licenseExpiry);
+export const licenseDaysLeft = (licenseExpiry: string, now = new Date()): number => expiryDaysLeft(licenseExpiry, now);
+export const getLicenseStatus = (licenseExpiry: string, now = new Date()): LicenseStatus =>
+  expiryStatus(licenseExpiry, LICENSE_EXPIRING_DAYS, now);

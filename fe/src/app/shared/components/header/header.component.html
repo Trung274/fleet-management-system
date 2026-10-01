@@ -49,26 +49,36 @@
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="action-icon">
             <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
           </svg>
-          <!-- Badge -->
-          <span class="notification-badge">3</span>
+          <!-- Badge: unread alerts only -->
+          @if (notificationService.unreadCount() > 0) {
+            <span class="notification-badge">{{ notificationService.unreadCount() > 9 ? '9+' : notificationService.unreadCount() }}</span>
+          }
         </button>
 
         @if (isNotificationOpen()) {
           <div class="notification-dropdown-menu">
             <div class="notification-header">
               <h3>Thông báo</h3>
-              <span class="mark-read">Đánh dấu đã đọc</span>
+              @if (notificationService.unreadCount() > 0) {
+                <button type="button" class="mark-read" (click)="notificationService.markAllRead()">Đánh dấu đã đọc</button>
+              }
             </div>
             <div class="notification-list">
-              @for (notif of notifications; track notif.id) {
-                <div class="notification-item" [class]="notif.type">
+              @for (notif of notificationService.items(); track notif.id) {
+                <button type="button" class="notification-item" [class]="'notification-item ' + notif.severity"
+                  [class.is-read]="notificationService.isRead(notif)"
+                  (click)="openNotification(notif)">
                   <div class="notification-item-dot"></div>
                   <div class="notification-item-content">
                     <p class="notification-item-title">{{ notif.title }}</p>
                     <p class="notification-item-msg">{{ notif.message }}</p>
-                    <span class="notification-item-time">{{ notif.time }}</span>
+                    <span class="notification-item-time">{{ notificationTime(notif) }}</span>
                   </div>
-                </div>
+                </button>
+              } @empty {
+                <p class="notification-empty">
+                  {{ notificationService.isLoading() ? 'Đang tải...' : 'Không có cảnh báo nào' }}
+                </p>
               }
             </div>
           </div>

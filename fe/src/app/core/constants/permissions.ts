@@ -4,6 +4,7 @@
  *  their endpoints check the admin role directly, so granting them to others does nothing. */
 export const PERMISSION_RESOURCES: { key: string; label: string }[] = [
   { key: 'vehicles', label: 'Xe' },
+  { key: 'maintenance', label: 'Bảo dưỡng & đăng kiểm' },
   { key: 'drivers',  label: 'Tài xế' },
   { key: 'routes',   label: 'Tuyến đường' },
   { key: 'trips',    label: 'Chuyến đi' },
@@ -20,6 +21,10 @@ const PERMISSION_LABELS: Record<string, string> = {
   'vehicles:create': 'Thêm xe',
   'vehicles:update': 'Sửa thông tin xe',
   'vehicles:delete': 'Xóa xe',
+  'maintenance:read': 'Xem lịch bảo dưỡng',
+  'maintenance:create': 'Lên lịch bảo dưỡng',
+  'maintenance:update': 'Sửa, bắt đầu, hoàn thành, hủy bảo dưỡng',
+  'maintenance:delete': 'Xóa lịch bảo dưỡng',
   'drivers:read': 'Xem danh sách tài xế',
   'drivers:create': 'Thêm tài xế',
   'drivers:update': 'Sửa thông tin tài xế',

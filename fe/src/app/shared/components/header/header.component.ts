@@ -1,8 +1,13 @@
-import { Component, signal, HostListener } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, signal, HostListener, OnInit, OnDestroy, inject, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 import { AuthService } from '../../../core/services/auth.service';
+import { NotificationService } from '../../../core/services/notification.service';
+import { AppNotification } from '../../../core/models/notification.model';
+
+/** How often the bell re-checks for alerts */
+const NOTIFICATION_REFRESH_MS = 5 * 60 * 1000;
 
 @Component({
   selector: 'app-header',
@@ -11,7 +16,7 @@ import { AuthService } from '../../../core/services/auth.service';
   templateUrl: './header.component.html',
   styleUrl: './header.component.css',
 })
-export class HeaderComponent {
+export class HeaderComponent implements OnInit, OnDestroy {
   isDropdownOpen = signal(false);
   isLoggingOut = signal(false);
   isLangDropdownOpen = signal(false);
@@ -19,11 +24,30 @@ export class HeaderComponent {
   isNotificationOpen = signal(false);
   isHelpOpen = signal(false);
 
-  notifications = [
-    { id: 1, title: 'Cảnh báo tốc độ', message: 'Xe 29B-123.45 vượt quá tốc độ cho phép (85/80 km/h)', time: '5 phút trước', type: 'warning' },
-    { id: 2, title: 'Báo cáo sự cố', message: 'Tài xế Trần Văn B báo cáo xe bị hỏng lốp tại Quốc lộ 1A', time: '12 phút trước', type: 'error' },
-    { id: 3, title: 'Lịch bảo dưỡng', message: 'Xe 30A-999.99 sắp đến hạn bảo dưỡng định kỳ', time: '1 giờ trước', type: 'info' }
-  ];
+  // ─── Notifications (real alerts from GET /notifications) ─────
+  notificationService = inject(NotificationService);
+  private isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private refreshTimer?: ReturnType<typeof setInterval>;
+
+  ngOnInit(): void {
+    if (!this.isBrowser) return;
+    this.notificationService.refresh();
+    this.refreshTimer = setInterval(() => this.notificationService.refresh(), NOTIFICATION_REFRESH_MS);
+  }
+
+  ngOnDestroy(): void {
+    if (this.refreshTimer) clearInterval(this.refreshTimer);
+  }
+
+  openNotification(n: AppNotification): void {
+    this.notificationService.markRead(n);
+    this.isNotificationOpen.set(false);
+    this.router.navigate([n.link]);
+  }
+
+  notificationTime(n: AppNotification): string {
+    return new Date(n.date).toLocaleDateString('vi-VN');
+  }
 
   toggleTheme(): void {
     this.isDarkMode.update((v) => !v);
@@ -39,6 +63,8 @@ export class HeaderComponent {
 
   toggleNotifications(): void {
     this.isNotificationOpen.update((v) => !v);
+    // Fresh list every time the bell is opened
+    if (this.isNotificationOpen()) this.notificationService.refresh();
   }
 
   toggleHelp(): void {
@@ -55,6 +81,7 @@ export class HeaderComponent {
     const url = this.router.url;
     if (url.startsWith('/dashboard')) return 'Tổng quan';
     if (url.startsWith('/vehicles')) return 'Quản lý phương tiện';
+    if (url.startsWith('/maintenance')) return 'Bảo dưỡng & đăng kiểm';
     if (url.startsWith('/drivers')) return 'Quản lý tài xế';
     if (url.startsWith('/routes')) return 'Quản lý tuyến đường';
     if (url.startsWith('/trips')) return 'Quản lý chuyến đi';
@@ -118,6 +145,7 @@ export class HeaderComponent {
     this.isLoggingOut.set(true);
     try {
       await this.authService.logout();
+      this.notificationService.clear();
       this.toastr.info('Đã đăng xuất', 'Tạm biệt');
       this.router.navigate(['/login']);
     } finally {

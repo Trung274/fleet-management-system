@@ -349,9 +349,14 @@
                   (change)="updateFormField('vehicle', $any($event.target).value)" required>
                   <option value="">— Chọn xe —</option>
                   @for (v of vehicles(); track v._id) {
-                    <option [value]="v._id">{{ v.registrationNumber }} · {{ v.make }} {{ v.model }} ({{ v.capacity }} chỗ)</option>
+                    <option [value]="v._id" [disabled]="vehicleBlockers().has(v._id) && v._id !== form().vehicle">
+                      {{ v.registrationNumber }} · {{ v.make }} {{ v.model }} ({{ v.capacity }} chỗ){{ vehicleBlockers().has(v._id) ? ' · ' + vehicleBlockers().get(v._id) : '' }}
+                    </option>
                   }
                 </select>
+                @if (vehicleWarning(); as warning) {
+                  <p class="field-warning">{{ warning }}</p>
+                }
               </div>
               <div class="form-group">
                 <label class="form-label">Tài xế <span class="required">*</span></label>

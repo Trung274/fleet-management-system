@@ -1,0 +1,34 @@
+/* Shared page styles come from bookings.component.css — only maintenance-specific rules here */
+
+.tabs { display:inline-flex; padding:3px; border-radius:10px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); }
+.tab {
+  padding:.4rem .85rem; border:none; border-radius:8px; background:none; cursor:pointer;
+  font-size:.82rem; font-weight:600; color:#94a3b8; font-family:'Inter',sans-serif;
+}
+.tab:hover { color:#e2e8f0; }
+.tab.active { background:#3b82f6; color:#fff; }
+
+.time-line { margin:0; white-space:nowrap; }
+
+.type-badge { display:inline-block; padding:3px 9px; border-radius:7px; font-size:.72rem; font-weight:700; white-space:nowrap; }
+.type-periodic   { background:rgba(59,130,246,.12);  color:#60a5fa; border:1px solid rgba(59,130,246,.25); }
+.type-repair     { background:rgba(249,115,22,.12);  color:#fb923c; border:1px solid rgba(249,115,22,.25); }
+.type-inspection { background:rgba(139,92,246,.12);  color:#a78bfa; border:1px solid rgba(139,92,246,.25); }
+
+.mt-status { display:inline-block; padding:4px 10px; border-radius:999px; font-size:.75rem; font-weight:600; white-space:nowrap; }
+.mt-scheduled     { background:rgba(59,130,246,.15);  color:#60a5fa; border:1px solid rgba(59,130,246,.3); }
+.mt-in-progress   { background:rgba(245,158,11,.15);  color:#fbbf24; border:1px solid rgba(245,158,11,.3); }
+.mt-completed     { background:rgba(22,163,74,.15);   color:#4ade80; border:1px solid rgba(22,163,74,.3); }
+.mt-cancelled     { background:rgba(100,116,139,.15); color:#94a3b8; border:1px solid rgba(100,116,139,.3); }
+.overrun { display:block; margin-top:4px; font-size:.68rem; font-weight:700; color:#f87171; }
+
+.conflict-panel {
+  padding:.85rem 1rem; border-radius:10px; font-size:.82rem; color:#fecaca;
+  background:rgba(239,68,68,.08); border:1px solid rgba(239,68,68,.35);
+}
+.conflict-title { margin:0; font-weight:700; color:#f87171; }
+.conflict-hint { margin:2px 0 .5rem; color:#fca5a5; }
+.conflict-panel ul { margin:0; padding-left:1.1rem; display:flex; flex-direction:column; gap:4px; }
+.conflict-panel .route-code { margin-right:4px; }
+
+.field-error { margin:0; font-size:.8rem; color:#f87171; }

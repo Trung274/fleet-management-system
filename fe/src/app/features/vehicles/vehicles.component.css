@@ -639,3 +639,11 @@
   justify-content: center;
   gap: 10px;
 }
+
+/* ─── Inspection / maintenance badges ─────────────────────────── */
+.expiry-badge {
+  display: block; width: fit-content; margin-top: 4px; padding: 2px 8px; border-radius: 999px;
+  font-size: 0.68rem; font-weight: 700; white-space: nowrap;
+}
+.expiry-expiring { background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
+.expiry-expired  { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3); }

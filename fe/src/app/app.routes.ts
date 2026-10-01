@@ -42,6 +42,14 @@ export const routes: Routes = [
         ...requires('vehicles'),
       },
       {
+        path: 'maintenance',
+        loadComponent: () =>
+          import('./features/maintenance/maintenance.component').then(
+            (m) => m.MaintenanceComponent,
+          ),
+        ...requires('maintenance'),
+      },
+      {
         path: 'drivers',
         loadComponent: () =>
           import('./features/drivers/drivers.component').then(

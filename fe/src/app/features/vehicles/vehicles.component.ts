@@ -9,7 +9,10 @@ import {
   VehicleStatus,
   VehicleCreatePayload,
   VehicleUpdatePayload,
+  getInspectionStatus,
+  getMaintenanceDueStatus,
 } from '../../core/models/vehicle.model';
+import { ExpiryStatus, expiryLabel } from '../../core/utils/expiry';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { ActionMenuComponent, MenuAction } from '../../shared/components/action-menu/action-menu.component';
 import { SearchInputComponent } from '../../shared/components/search-input/search-input.component';
@@ -143,6 +146,9 @@ export class VehiclesComponent implements OnInit {
       color: vehicle.color ?? '',
       vin: vehicle.vin ?? '',
       notes: vehicle.notes ?? '',
+      inspectionExpiry: vehicle.inspectionExpiry?.substring(0, 10) ?? '',
+      maintenanceIntervalDays: vehicle.maintenanceIntervalDays ?? 90,
+      lastMaintenanceAt: vehicle.lastMaintenanceAt?.substring(0, 10) ?? '',
     };
     this.modalMode.set('edit');
     this.isModalOpen.set(true);
@@ -169,6 +175,8 @@ export class VehiclesComponent implements OnInit {
     if (!payload.color) delete payload.color;
     if (!payload.vin) delete payload.vin;
     if (!payload.notes) delete payload.notes;
+    if (!payload.inspectionExpiry) delete payload.inspectionExpiry;
+    if (!payload.lastMaintenanceAt) delete payload.lastMaintenanceAt;
 
     try {
       if (this.modalMode() === 'create') {
@@ -233,7 +241,23 @@ export class VehiclesComponent implements OnInit {
       color: '',
       vin: '',
       notes: '',
+      inspectionExpiry: '',
+      maintenanceIntervalDays: 90,
+      lastMaintenanceAt: '',
     };
+  }
+
+  // ─── Inspection / maintenance badges ──────────────────────────
+  inspectionStatus(v: Vehicle): ExpiryStatus | null {
+    return getInspectionStatus(v);
+  }
+
+  inspectionLabel(v: Vehicle): string {
+    return v.inspectionExpiry ? expiryLabel(v.inspectionExpiry) : '';
+  }
+
+  maintenanceStatus(v: Vehicle) {
+    return getMaintenanceDueStatus(v);
   }
 
   statusLabel(status: VehicleStatus): string {

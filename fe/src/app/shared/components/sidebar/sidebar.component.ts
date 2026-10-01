@@ -30,6 +30,7 @@ export class SidebarComponent {
   navItems: NavItem[] = [
     { label: 'Dashboard', route: '/dashboard', icon: 'dashboard' },
     { label: 'Xe', route: '/vehicles', icon: 'vehicle', permission: { resource: 'vehicles', action: 'read' } },
+    { label: 'Bảo dưỡng', route: '/maintenance', icon: 'maintenance', permission: { resource: 'maintenance', action: 'read' } },
     { label: 'Tài xế', route: '/drivers', icon: 'driver', permission: { resource: 'drivers', action: 'read' } },
     { label: 'Tuyến đường', route: '/routes', icon: 'route', permission: { resource: 'routes', action: 'read' } },
     { label: 'Chuyến đi', route: '/trips', icon: 'trip', permission: { resource: 'trips', action: 'read' } },

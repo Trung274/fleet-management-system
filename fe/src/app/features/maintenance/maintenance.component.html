@@ -1,0 +1,272 @@
+<!-- ─── Page Header ─────────────────────────────────────────────── -->
+<div class="page-header">
+  <div class="page-header-left">
+    <h1 class="page-title">Bảo Dưỡng & Đăng Kiểm</h1>
+    <p class="page-subtitle">Xe đang hoặc sắp bảo dưỡng không xếp chuyến được trong khung giờ đó</p>
+  </div>
+  @if (allowCreate()) {
+    <app-add-button buttonId="add-maintenance-btn" label="Lên Lịch Bảo Dưỡng" (clicked)="openCreate()" />
+  }
+</div>
+
+<!-- ─── Tabs + filters ───────────────────────────────────────────── -->
+<div class="filter-bar">
+  <div class="tabs" role="tablist">
+    <button type="button" role="tab" class="tab" [class.active]="tab() === 'upcoming'" [attr.aria-selected]="tab() === 'upcoming'" (click)="setTab('upcoming')">Sắp tới & đang làm</button>
+    <button type="button" role="tab" class="tab" [class.active]="tab() === 'done'" [attr.aria-selected]="tab() === 'done'" (click)="setTab('done')">Đã xong / đã hủy</button>
+    <button type="button" role="tab" class="tab" [class.active]="tab() === 'all'" [attr.aria-selected]="tab() === 'all'" (click)="setTab('all')">Tất cả</button>
+  </div>
+  @if (vehicles().length) {
+    <select class="filter-select" [value]="vehicleFilter()" (change)="onVehicleFilter($any($event.target).value)">
+      <option value="">Tất cả xe</option>
+      @for (v of vehicles(); track v._id) {
+        <option [value]="v._id">{{ v.registrationNumber }}</option>
+      }
+    </select>
+  }
+  <select class="filter-select" [value]="typeFilter()" (change)="onTypeFilter($any($event.target).value)">
+    <option value="">Tất cả loại</option>
+    @for (t of types; track t) {
+      <option [value]="t">{{ typeLabels[t] }}</option>
+    }
+  </select>
+</div>
+
+<!-- ─── Table ────────────────────────────────────────────────────── -->
+<div class="table-card">
+  @if (isLoading()) {
+    <div class="loading-overlay">
+      <div class="spinner"></div>
+      <p>Đang tải...</p>
+    </div>
+  } @else if (records().length === 0) {
+    <div class="empty-state">
+      <p>{{ tab() === 'upcoming' ? 'Không có lịch bảo dưỡng sắp tới' : 'Không có dữ liệu' }}</p>
+      @if (allowCreate() && tab() === 'upcoming') {
+        <button class="btn btn-primary" (click)="openCreate()">Lên lịch bảo dưỡng</button>
+      }
+    </div>
+  } @else {
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Xe</th>
+            <th>Loại</th>
+            <th>Thời gian</th>
+            <th>Gara</th>
+            <th>Chi phí</th>
+            <th>Trạng thái</th>
+            <th style="text-align:right">Thao Tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (r of records(); track r._id) {
+            <tr class="table-row">
+              <td>
+                <p class="passenger-name">{{ r.vehicle.registrationNumber }}</p>
+                <p class="passenger-phone">{{ r.vehicle.make }} {{ r.vehicle.model }}</p>
+              </td>
+              <td><span class="type-badge" [class]="'type-badge type-' + r.type">{{ typeLabels[r.type] }}</span></td>
+              <td class="text-sm">
+                <p class="time-line">{{ formatDateTime(r.scheduledStart) }}</p>
+                <p class="time-line text-muted">→ {{ formatDateTime(r.scheduledEnd) }}</p>
+              </td>
+              <td class="text-muted">{{ r.garage || '—' }}</td>
+              <td class="text-muted">{{ r.cost != null ? (r.cost | number) + ' ₫' : '—' }}</td>
+              <td>
+                <span class="mt-status" [class]="'mt-status mt-' + r.status">{{ statusLabels[r.status] }}</span>
+                @if (isOverrunning(r)) {
+                  <span class="overrun">Quá giờ dự kiến</span>
+                }
+              </td>
+              <td style="text-align:right; padding-right:.75rem">
+                @if (getActions(r).length) {
+                  <app-action-menu [actions]="getActions(r)" />
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (totalPages() > 1) {
+      <div class="pagination">
+        <button class="page-btn" [disabled]="currentPage() === 1" (click)="goToPage(currentPage() - 1)">‹</button>
+        @for (page of pages(); track page) {
+          <button class="page-btn" [class.active]="page === currentPage()" (click)="goToPage(page)">{{ page }}</button>
+        }
+        <button class="page-btn" [disabled]="currentPage() === totalPages()" (click)="goToPage(currentPage() + 1)">›</button>
+      </div>
+    }
+  }
+</div>
+
+<!-- ─── Create / Edit Modal ──────────────────────────────────────── -->
+@if (modalOpen()) {
+  <div class="modal-backdrop" (click)="closeModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title">{{ editing() ? 'Sửa Lịch Bảo Dưỡng' : 'Lên Lịch Bảo Dưỡng' }}</h2>
+        <button class="modal-close" (click)="closeModal()" aria-label="Đóng">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <form id="maintenance-form" class="modal-body" (submit)="$event.preventDefault(); onSubmit()">
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label" for="mt-vehicle">Xe <span class="required">*</span></label>
+            <select id="mt-vehicle" class="form-input" [value]="form().vehicle" [disabled]="!!editing()"
+              (change)="updateField('vehicle', $any($event.target).value)">
+              <option value="">— Chọn xe —</option>
+              @for (v of schedulableVehicles(); track v._id) {
+                <option [value]="v._id">{{ vehicleLabel(v) }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="mt-type">Loại <span class="required">*</span></label>
+            <select id="mt-type" class="form-input" [value]="form().type" (change)="updateField('type', $any($event.target).value)">
+              @for (t of types; track t) {
+                <option [value]="t">{{ typeLabels[t] }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="mt-start">Bắt đầu <span class="required">*</span></label>
+            <input id="mt-start" class="form-input" type="datetime-local"
+              [value]="form().scheduledStart" (input)="updateField('scheduledStart', $any($event.target).value)" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="mt-end">Dự kiến xong <span class="required">*</span></label>
+            <input id="mt-end" class="form-input" type="datetime-local"
+              [value]="form().scheduledEnd" (input)="updateField('scheduledEnd', $any($event.target).value)" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="mt-garage">Gara / nơi đăng kiểm</label>
+            <input id="mt-garage" class="form-input" type="text" placeholder="VD: Gara Thành Công"
+              [value]="form().garage" (input)="updateField('garage', $any($event.target).value)" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="mt-cost">Chi phí dự kiến (VNĐ)</label>
+            <input id="mt-cost" class="form-input" type="number" min="0" placeholder="VD: 3000000"
+              [value]="form().cost" (input)="updateField('cost', $any($event.target).value)" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="mt-notes">Ghi chú</label>
+          <textarea id="mt-notes" class="form-input" rows="2" placeholder="Hạng mục cần làm..."
+            [value]="form().notes" (input)="updateField('notes', $any($event.target).value)"></textarea>
+        </div>
+
+        @if (conflicts().length) {
+          <div class="conflict-panel" role="alert">
+            <p class="conflict-title">Xe đã có {{ conflicts().length }} chuyến trong thời gian này</p>
+            <p class="conflict-hint">Đổi xe cho các chuyến dưới đây ở trang Chuyến đi, hoặc chọn thời gian khác.</p>
+            <ul>
+              @for (t of conflicts(); track t._id) {
+                <li>
+                  <span class="route-code">{{ t.route?.code }}</span>
+                  {{ t.route?.origin }} → {{ t.route?.destination }} ·
+                  {{ formatDateTime(t.scheduledDeparture) }} – {{ formatDateTime(t.scheduledArrival) }}
+                </li>
+              }
+            </ul>
+          </div>
+        } @else if (formError(); as err) {
+          @if (form().vehicle || form().scheduledStart || form().scheduledEnd) {
+            <p class="field-error">{{ err }}</p>
+          }
+        }
+      </form>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" [disabled]="isSubmitting()" (click)="closeModal()">Hủy</button>
+        <button class="btn btn-primary" type="submit" form="maintenance-form" [disabled]="isSubmitting() || !!formError()">
+          @if (isSubmitting()) { <span class="spinner-sm"></span> }
+          {{ editing() ? 'Lưu thay đổi' : 'Lên lịch' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ─── Complete dialog ──────────────────────────────────────────── -->
+@if (completing(); as r) {
+  <div class="modal-backdrop" (click)="completing.set(null)">
+    <div class="action-dialog" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title">Hoàn Thành {{ typeLabels[r.type] }}</h2>
+      </div>
+      <div class="modal-body">
+        <p class="action-desc">
+          Xe <strong>{{ r.vehicle.registrationNumber }}</strong> sẽ trở lại hoạt động.
+          @if (r.type === 'periodic') { Ngày bảo dưỡng gần nhất được cập nhật thành hôm nay. }
+        </p>
+        @if (r.type === 'inspection') {
+          <div class="form-group">
+            <label class="form-label" for="mt-new-expiry">Hạn đăng kiểm mới <span class="required">*</span></label>
+            <input id="mt-new-expiry" class="form-input" type="date"
+              [value]="completeExpiry()" (input)="completeExpiry.set($any($event.target).value)" />
+          </div>
+        }
+        <div class="form-group">
+          <label class="form-label" for="mt-final-cost">Chi phí thực tế (VNĐ)</label>
+          <input id="mt-final-cost" class="form-input" type="number" min="0"
+            [value]="completeCost()" (input)="completeCost.set($any($event.target).value)" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" [disabled]="isActioning()" (click)="completing.set(null)">Đóng</button>
+        <button class="btn btn-success" [disabled]="isActioning()" (click)="submitComplete()">
+          @if (isActioning()) { <span class="spinner-sm"></span> }
+          Hoàn thành
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ─── Cancel dialog ────────────────────────────────────────────── -->
+@if (cancelling(); as r) {
+  <div class="modal-backdrop" (click)="cancelling.set(null)">
+    <div class="action-dialog" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title">Hủy Lịch Bảo Dưỡng</h2>
+      </div>
+      <div class="modal-body">
+        <p class="action-desc">
+          Hủy {{ typeLabels[r.type].toLowerCase() }} của xe <strong>{{ r.vehicle.registrationNumber }}</strong>.
+          @if (r.status === 'in-progress') { Xe sẽ trở lại hoạt động ngay. }
+        </p>
+        <div class="form-group">
+          <label class="form-label" for="mt-cancel-reason">Lý do (tùy chọn)</label>
+          <textarea id="mt-cancel-reason" class="form-input" rows="2"
+            [value]="cancelReason()" (input)="cancelReason.set($any($event.target).value)"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" [disabled]="isActioning()" (click)="cancelling.set(null)">Đóng</button>
+        <button class="btn btn-danger" [disabled]="isActioning()" (click)="submitCancel()">
+          @if (isActioning()) { <span class="spinner-sm"></span> }
+          Xác nhận hủy
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ─── Delete confirm ───────────────────────────────────────────── -->
+<app-confirm-dialog
+  [isOpen]="!!deleting()"
+  title="Xóa lịch bảo dưỡng?"
+  [message]="'Xóa vĩnh viễn lịch bảo dưỡng này? Không thể hoàn tác.'"
+  confirmLabel="Xóa"
+  [isLoading]="isActioning()"
+  (confirmed)="confirmDelete()"
+  (cancelled)="deleting.set(null)"
+/>

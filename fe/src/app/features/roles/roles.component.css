@@ -55,7 +55,7 @@
 }
 
 /* Cell changed but not saved yet */
-.cell-changed { background:rgba(245,158,11,.08); box-shadow:inset 0 0 0 1px rgba(245,158,11,.35); }
+.cell-changed { background:rgba(245,158,11,.08); }
 
 /* ─── Checkbox ────────────────────────────────────────────────── */
 .check {

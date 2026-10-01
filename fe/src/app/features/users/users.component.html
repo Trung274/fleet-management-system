@@ -1,0 +1,176 @@
+<!-- ─── Page Header ─────────────────────────────────────────────── -->
+<div class="page-header">
+  <div class="page-header-left">
+    <h1 class="page-title">Quản Lý Người Dùng</h1>
+    <p class="page-subtitle">{{ total() }} tài khoản · hệ thống không cho tự đăng ký, chỉ quản trị viên tạo tài khoản</p>
+  </div>
+  <app-add-button buttonId="add-user-btn" label="Tạo Tài Khoản" (clicked)="openCreateModal()" />
+</div>
+
+<!-- ─── Filters ──────────────────────────────────────────────────── -->
+<div class="filter-bar">
+  <app-search-input
+    inputId="user-search"
+    placeholder="Tìm theo tên, email..."
+    [value]="searchQuery()"
+    (search)="onSearch($event)"
+  />
+  <select id="user-role-filter" class="filter-select" [value]="roleFilter()" (change)="onRoleFilter($any($event.target).value)">
+    <option value="">Tất cả vai trò</option>
+    @for (r of roleNames; track r) {
+      <option [value]="r">{{ roleLabel(r) }}</option>
+    }
+  </select>
+  <select id="user-status-filter" class="filter-select" [value]="statusFilter()" (change)="onStatusFilter($any($event.target).value)">
+    <option value="">Tất cả trạng thái</option>
+    <option value="active">Đang hoạt động</option>
+    <option value="inactive">Đã khóa</option>
+  </select>
+</div>
+
+<!-- ─── Table ────────────────────────────────────────────────────── -->
+<div class="table-card">
+  @if (isLoading()) {
+    <div class="loading-overlay">
+      <div class="spinner"></div>
+      <p>Đang tải...</p>
+    </div>
+  } @else if (users().length === 0) {
+    <div class="empty-state">
+      <p>Không có tài khoản nào khớp bộ lọc</p>
+    </div>
+  } @else {
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Người Dùng</th>
+            <th>Vai Trò</th>
+            <th>Trạng Thái</th>
+            <th>Ngày Tạo</th>
+            <th style="text-align:right">Thao Tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (u of users(); track u._id) {
+            <tr class="table-row" [class.row-locked]="!u.isActive">
+              <td>
+                <div class="passenger-cell">
+                  <div class="passenger-avatar" [class]="'passenger-avatar avatar-' + u.role.name">{{ u.name[0] }}</div>
+                  <div>
+                    <p class="passenger-name">
+                      {{ u.name }}
+                      @if (isSelf(u)) { <span class="self-tag">Bạn</span> }
+                    </p>
+                    <p class="passenger-phone">{{ u.email }}</p>
+                  </div>
+                </div>
+              </td>
+              <td><span class="role-badge" [class]="'role-badge role-' + u.role.name">{{ roleLabel(u.role.name) }}</span></td>
+              <td>
+                <span class="status-badge" [class]="u.isActive ? 'status-badge status-confirmed' : 'status-badge status-cancelled'">
+                  {{ u.isActive ? 'Đang hoạt động' : 'Đã khóa' }}
+                </span>
+              </td>
+              <td class="text-muted text-sm">{{ formatDate(u.createdAt) }}</td>
+              <td style="text-align:right; padding-right:.75rem">
+                <app-action-menu [actions]="getActions(u)" />
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (totalPages() > 1) {
+      <div class="pagination">
+        <button class="page-btn" [disabled]="currentPage() === 1" (click)="goToPage(currentPage() - 1)">‹</button>
+        @for (page of pages(); track page) {
+          <button class="page-btn" [class.active]="page === currentPage()" (click)="goToPage(page)">{{ page }}</button>
+        }
+        <button class="page-btn" [disabled]="currentPage() === totalPages()" (click)="goToPage(currentPage() + 1)">›</button>
+      </div>
+    }
+  }
+</div>
+
+<!-- ─── Create / Edit Modal ──────────────────────────────────────── -->
+@if (modalOpen()) {
+  <div class="modal-backdrop" (click)="closeModal()">
+    <div class="action-dialog" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title">{{ modalMode() === 'create' ? 'Tạo Tài Khoản' : 'Sửa Tài Khoản' }}</h2>
+        <button class="modal-close" (click)="closeModal()" aria-label="Đóng">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <form id="user-form" class="modal-body" (submit)="$event.preventDefault(); onSubmit()">
+        <div class="form-group">
+          <label class="form-label" for="user-name">Họ tên <span class="required">*</span></label>
+          <input id="user-name" class="form-input" type="text" autocomplete="off" placeholder="Nguyễn Văn A"
+            [value]="form().name" (input)="updateField('name', $any($event.target).value)" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="user-email">Email <span class="required">*</span></label>
+          <input id="user-email" class="form-input" type="email" autocomplete="off" placeholder="email@example.com"
+            [value]="form().email" (input)="updateField('email', $any($event.target).value)" />
+        </div>
+
+        @if (modalMode() === 'create') {
+          <div class="form-group">
+            <label class="form-label" for="user-password">Mật khẩu ban đầu <span class="required">*</span></label>
+            <input id="user-password" class="form-input" autocomplete="new-password" placeholder="Ít nhất 6 ký tự"
+              [type]="showPassword() ? 'text' : 'password'"
+              [value]="form().password" (input)="updateField('password', $any($event.target).value)" />
+            <label class="show-toggle">
+              <input type="checkbox" [checked]="showPassword()" (change)="showPassword.set($any($event.target).checked)" />
+              Hiện mật khẩu
+            </label>
+            <p class="hint-text">Gửi mật khẩu này cho người dùng; họ có thể đổi trong trang Hồ sơ.</p>
+          </div>
+        }
+
+        <div class="form-group">
+          <label class="form-label" for="user-role">Vai trò</label>
+          <select id="user-role" class="form-input" [value]="form().roleName" [disabled]="isSelfEditing()"
+            (change)="updateField('roleName', $any($event.target).value)">
+            @for (r of roleNames; track r) {
+              <option [value]="r">{{ roleLabel(r) }}</option>
+            }
+          </select>
+          @if (isSelfEditing()) {
+            <p class="hint-text">Bạn không thể tự đổi vai trò của chính mình.</p>
+          }
+        </div>
+
+        @if (formError(); as err) {
+          @if (form().name || form().email || form().password) {
+            <p class="field-error">{{ err }}</p>
+          }
+        }
+      </form>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" [disabled]="isSubmitting()" (click)="closeModal()">Hủy</button>
+        <button class="btn btn-primary" type="submit" form="user-form" [disabled]="isSubmitting() || !!formError()">
+          @if (isSubmitting()) { <span class="spinner-sm"></span> }
+          {{ modalMode() === 'create' ? 'Tạo tài khoản' : 'Lưu thay đổi' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ─── Lock / unlock / delete confirmation ──────────────────────── -->
+<app-confirm-dialog
+  [isOpen]="!!pending()"
+  [title]="confirmTitle()"
+  [message]="confirmMessage()"
+  [confirmLabel]="confirmLabel()"
+  [isLoading]="isActioning()"
+  (confirmed)="confirmPending()"
+  (cancelled)="cancelPending()"
+/>

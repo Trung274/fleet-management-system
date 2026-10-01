@@ -91,6 +91,16 @@ export const routes: Routes = [
           ),
       },
       {
+        // Backend restricts /users to the admin role itself (authorize('admin'))
+        path: 'users',
+        loadComponent: () =>
+          import('./features/users/users.component').then(
+            (m) => m.UsersComponent,
+          ),
+        canActivate: [permissionGuard],
+        data: { adminOnly: true },
+      },
+      {
         // Backend restricts /roles and /permissions to the admin role itself
         path: 'roles',
         loadComponent: () =>

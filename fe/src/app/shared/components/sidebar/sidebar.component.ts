@@ -35,6 +35,7 @@ export class SidebarComponent {
     { label: 'Chuyến đi', route: '/trips', icon: 'trip', permission: { resource: 'trips', action: 'read' } },
     { label: 'Đặt vé', route: '/bookings', icon: 'booking', permission: { resource: 'bookings', action: 'read' } },
     { label: 'Hành trình', route: '/itineraries', icon: 'itinerary', permission: { resource: 'bookings', action: 'read' } },
+    { label: 'Người dùng', route: '/users', icon: 'users', adminOnly: true },
     { label: 'Phân quyền', route: '/roles', icon: 'roles', adminOnly: true },
   ];
 

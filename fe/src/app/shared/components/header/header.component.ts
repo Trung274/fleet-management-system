@@ -60,6 +60,7 @@ export class HeaderComponent {
     if (url.startsWith('/trips')) return 'Quản lý chuyến đi';
     if (url.startsWith('/bookings')) return 'Quản lý đặt vé';
     if (url.startsWith('/itineraries')) return 'Hành trình nhiều chặng';
+    if (url.startsWith('/users')) return 'Quản lý người dùng';
     if (url.startsWith('/roles')) return 'Vai trò & phân quyền';
     if (url.startsWith('/profile')) return 'Hồ sơ của tôi';
     return 'Hệ thống điều hành';

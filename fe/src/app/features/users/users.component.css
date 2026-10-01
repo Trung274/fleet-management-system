@@ -1,0 +1,25 @@
+/* Shared page styles come from bookings.component.css — only user-specific rules here */
+
+.role-badge { display:inline-block; padding:4px 10px; border-radius:999px; font-size:.75rem; font-weight:700; white-space:nowrap; }
+.role-admin   { background:rgba(239,68,68,.15);  color:#f87171; border:1px solid rgba(239,68,68,.3); }
+.role-manager { background:rgba(59,130,246,.15); color:#60a5fa; border:1px solid rgba(59,130,246,.3); }
+.role-staff   { background:rgba(22,163,74,.15);  color:#4ade80; border:1px solid rgba(22,163,74,.3); }
+.role-user    { background:rgba(100,116,139,.15); color:#94a3b8; border:1px solid rgba(100,116,139,.3); }
+
+.avatar-admin   { background:linear-gradient(135deg,#ef4444,#f97316); }
+.avatar-manager { background:linear-gradient(135deg,#3b82f6,#6366f1); }
+.avatar-staff   { background:linear-gradient(135deg,#16a34a,#14b8a6); }
+.avatar-user    { background:linear-gradient(135deg,#64748b,#475569); }
+
+.self-tag {
+  margin-left:6px; padding:1px 7px; border-radius:999px; font-size:.65rem; font-weight:700; vertical-align:middle;
+  background:rgba(59,130,246,.15); color:#60a5fa; border:1px solid rgba(59,130,246,.3);
+}
+
+/* Locked accounts are dimmed */
+.row-locked .passenger-name,
+.row-locked .passenger-phone { opacity:.55; }
+
+.show-toggle { display:inline-flex; align-items:center; gap:6px; margin-top:4px; font-size:.8rem; color:#94a3b8; cursor:pointer; width:fit-content; }
+.show-toggle input { accent-color:#3b82f6; }
+.field-error { margin:0; font-size:.8rem; color:#f87171; }

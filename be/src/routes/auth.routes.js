@@ -40,7 +40,7 @@ const { protect, authorize, checkPermission } = require('../middleware/auth');
  *                 example: password123
  *               roleName:
  *                 type: string
- *                 enum: [admin, user]
+ *                 enum: [admin, manager, staff, user]
  *                 example: user
  *     responses:
  *       201:

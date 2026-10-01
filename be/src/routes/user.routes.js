@@ -29,6 +29,21 @@ const { protect, authorize } = require('../middleware/auth');
  *         schema:
  *           type: integer
  *         description: Number of items per page
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Match name or email (case-insensitive)
+ *       - in: query
+ *         name: role
+ *         schema:
+ *           type: string
+ *           enum: [admin, manager, staff, user]
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [active, inactive]
  *     responses:
  *       200:
  *         description: List of users
@@ -65,7 +80,11 @@ router.get('/:id', protect, userController.getUserById);
  * @swagger
  * /api/v1/users/{id}:
  *   put:
- *     summary: Update user
+ *     summary: Update user (own name/email, or any user as admin)
+ *     description: |
+ *       Admin may also change `role` (Role id) and `isActive`. Locking an account
+ *       (`isActive: false`) signs the user out of every device.
+ *       Admins cannot change their own role or lock their own account.
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
@@ -85,9 +104,19 @@ router.get('/:id', protect, userController.getUserById);
  *                 type: string
  *               email:
  *                 type: string
+ *               role:
+ *                 type: string
+ *                 description: Role id (admin only)
+ *               isActive:
+ *                 type: boolean
+ *                 description: Admin only
  *     responses:
  *       200:
  *         description: User updated
+ *       400:
+ *         description: Role not found, or admin changing own role / locking own account
+ *       403:
+ *         description: Updating another user without being admin
  *       404:
  *         description: User not found
  */

@@ -4,11 +4,13 @@
     <h1 class="page-title">Hành Trình Nhiều Chặng</h1>
     <p class="page-subtitle">{{ total() }} hành trình · mỗi chặng là một chuyến riêng, có thể khác xe và tài xế</p>
   </div>
-  <app-add-button
-    buttonId="add-itinerary-btn"
-    label="Đặt Hành Trình"
-    (clicked)="openCreateModal()"
-  />
+  @if (allowCreate()) {
+    <app-add-button
+      buttonId="add-itinerary-btn"
+      label="Đặt Hành Trình"
+      (clicked)="openCreateModal()"
+    />
+  }
 </div>
 
 <!-- ─── Filters ──────────────────────────────────────────────────── -->
@@ -41,7 +43,9 @@
         <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
       </svg>
       <p>Chưa có hành trình nào</p>
-      <button class="btn btn-primary" (click)="openCreateModal()">Tạo hành trình đầu tiên</button>
+      @if (allowCreate()) {
+        <button class="btn btn-primary" (click)="openCreateModal()">Tạo hành trình đầu tiên</button>
+      }
     </div>
   } @else {
     <div class="table-wrap">

@@ -2,6 +2,7 @@ import { Component, OnInit, signal, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
+import { AuthService } from '../../core/services/auth.service';
 import { ItineraryService } from '../../core/services/itinerary.service';
 import { SeatService } from '../../core/services/seat.service';
 import { TripService } from '../../core/services/trip.service';
@@ -45,6 +46,11 @@ export class ItinerariesComponent implements OnInit {
   private seatService      = inject(SeatService);
   private tripService      = inject(TripService);
   private toastr           = inject(ToastrService);
+  private auth             = inject(AuthService);
+
+  // Itineraries use the bookings permissions on the backend
+  readonly allowCreate = computed(() => this.auth.can('bookings', 'create'));
+  readonly allowUpdate = computed(() => this.auth.can('bookings', 'update'));
 
   // ─── Data ──────────────────────────────────────────────────────
   itineraries  = signal<Itinerary[]>([]);
@@ -102,7 +108,10 @@ export class ItinerariesComponent implements OnInit {
   // ─── Lifecycle ─────────────────────────────────────────────────
   ngOnInit(): void {
     this.loadItineraries();
-    this.loadTrips();
+    // Trips are only needed to build a new itinerary
+    if (this.allowCreate() && this.auth.can('trips', 'read')) {
+      this.loadTrips();
+    }
   }
 
   // ─── Data Loading ──────────────────────────────────────────────
@@ -338,8 +347,8 @@ export class ItinerariesComponent implements OnInit {
     return this.statuses.find(s => s.value === status)?.label ?? status;
   }
 
-  canConfirm(i: Itinerary): boolean { return i.status === 'pending'; }
-  canCancel(i: Itinerary): boolean  { return i.status !== 'cancelled'; }
+  canConfirm(i: Itinerary): boolean { return this.allowUpdate() && i.status === 'pending'; }
+  canCancel(i: Itinerary): boolean  { return this.allowUpdate() && i.status !== 'cancelled'; }
 
   /** "Hà Nội → Hải Phòng → Quảng Ninh" */
   routePath(itinerary: Itinerary): string {

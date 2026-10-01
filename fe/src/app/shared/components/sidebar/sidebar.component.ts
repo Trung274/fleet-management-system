@@ -7,6 +7,8 @@ interface NavItem {
   label: string;
   route: string;
   icon: string;
+  /** Hidden unless the user has this permission (same as the page's route guard) */
+  permission?: { resource: string; action: string };
   children?: NavItem[];
 }
 
@@ -25,13 +27,20 @@ export class SidebarComponent {
 
   navItems: NavItem[] = [
     { label: 'Dashboard', route: '/dashboard', icon: 'dashboard' },
-    { label: 'Xe', route: '/vehicles', icon: 'vehicle' },
-    { label: 'Tài xế', route: '/drivers', icon: 'driver' },
-    { label: 'Tuyến đường', route: '/routes', icon: 'route' },
-    { label: 'Chuyến đi', route: '/trips', icon: 'trip' },
-    { label: 'Đặt vé', route: '/bookings', icon: 'booking' },
-    { label: 'Hành trình', route: '/itineraries', icon: 'itinerary' },
+    { label: 'Xe', route: '/vehicles', icon: 'vehicle', permission: { resource: 'vehicles', action: 'read' } },
+    { label: 'Tài xế', route: '/drivers', icon: 'driver', permission: { resource: 'drivers', action: 'read' } },
+    { label: 'Tuyến đường', route: '/routes', icon: 'route', permission: { resource: 'routes', action: 'read' } },
+    { label: 'Chuyến đi', route: '/trips', icon: 'trip', permission: { resource: 'trips', action: 'read' } },
+    { label: 'Đặt vé', route: '/bookings', icon: 'booking', permission: { resource: 'bookings', action: 'read' } },
+    { label: 'Hành trình', route: '/itineraries', icon: 'itinerary', permission: { resource: 'bookings', action: 'read' } },
   ];
+
+  // can() reads the user's permission signals, so this updates when the user loads or changes
+  visibleNavItems = computed(() =>
+    this.navItems.filter(
+      item => !item.permission || this.authService.can(item.permission.resource, item.permission.action),
+    ),
+  );
 
   get userInitial(): string {
     const name = this.authService.user()?.name;

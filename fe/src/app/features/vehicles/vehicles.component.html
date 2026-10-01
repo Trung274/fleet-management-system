@@ -4,11 +4,13 @@
     <h1 class="page-title">Quản lý xe</h1>
     <p class="page-subtitle">{{ total() }} Xe trong hệ thống</p>
   </div>
-  <app-add-button
-    buttonId="add-vehicle-btn"
-    label="Thêm xe mới"
-    (clicked)="openCreate()"
-  />
+  @if (allowCreate()) {
+    <app-add-button
+      buttonId="add-vehicle-btn"
+      label="Thêm xe mới"
+      (clicked)="openCreate()"
+    />
+  }
 </div>
 
 <!-- ── Filters Bar ── -->
@@ -186,9 +188,11 @@
             </div>
           </div>
           <div class="modal-footer">
-            <button class="btn-secondary" (click)="openEdit(v); isModalOpen.set(true)">
-              Chỉnh sửa
-            </button>
+            @if (allowUpdate()) {
+              <button class="btn-secondary" (click)="openEdit(v); isModalOpen.set(true)">
+                Chỉnh sửa
+              </button>
+              }
             <button class="btn-primary" (click)="closeModal()">Đóng</button>
           </div>
         } @else {

@@ -55,7 +55,19 @@ export class TokenStorageService {
 
   // ─── User Data ────────────────────────────────────────────────
   setUser(user: User, rememberMe = false): void {
-    this.cookieService.set(USER_KEY, JSON.stringify(user), {
+    // Browsers drop cookies over ~4KB, and the full admin user is ~8KB once encoded.
+    // Keep only what the UI needs: active permissions as resource + action.
+    const compact: User = {
+      ...user,
+      role: {
+        _id: user.role?._id,
+        name: user.role?.name,
+        permissions: (user.role?.permissions ?? [])
+          .filter(p => p.isActive !== false)
+          .map(p => ({ resource: p.resource, action: p.action })),
+      },
+    };
+    this.cookieService.set(USER_KEY, JSON.stringify(compact), {
       ...this.cookieOptions(rememberMe, 7),
     });
   }

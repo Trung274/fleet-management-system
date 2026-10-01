@@ -1,8 +1,10 @@
 export interface Permission {
-  _id: string;
   resource: string;
   action: string;
-  description: string;
+  // Not kept in the cookie copy of the user (see TokenStorageService.setUser)
+  _id?: string;
+  description?: string;
+  isActive?: boolean;
 }
 
 export interface User {

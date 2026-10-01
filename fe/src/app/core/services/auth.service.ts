@@ -32,6 +32,19 @@ export class AuthService {
     () => !!(this._token() && this._user()),
   );
 
+  // ─── Permissions (mirror backend checkPermission) ─────────────
+  isAdmin = computed(() => this._user()?.role?.name === 'admin');
+  private permissionSet = computed(() => new Set(
+    (this._user()?.role?.permissions ?? [])
+      .filter(p => p.isActive !== false)
+      .map(p => `${p.resource}:${p.action}`),
+  ));
+
+  /** Admin can do everything; others need the exact resource:action permission */
+  can(resource: string, action: string): boolean {
+    return this.isAdmin() || this.permissionSet().has(`${resource}:${action}`);
+  }
+
   constructor(
     private http: HttpClient,
     private tokenStorage: TokenStorageService,

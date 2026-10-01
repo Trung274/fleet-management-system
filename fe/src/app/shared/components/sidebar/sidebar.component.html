@@ -20,7 +20,7 @@
 
     }
 
-    @for (item of navItems; track item.route) {
+    @for (item of visibleNavItems(); track item.route) {
       <a
         [routerLink]="item.route"
         class="nav-item"

@@ -2,6 +2,7 @@ import { Component, OnInit, signal, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
+import { AuthService } from '../../core/services/auth.service';
 import { TripService } from '../../core/services/trip.service';
 import { RouteService } from '../../core/services/route.service';
 import { VehicleService } from '../../core/services/vehicle.service';
@@ -35,6 +36,12 @@ export class TripsComponent implements OnInit {
   private vehicleService = inject(VehicleService);
   private driverService  = inject(DriverService);
   private toastr         = inject(ToastrService);
+  private auth           = inject(AuthService);
+
+  // Hide actions the backend would reject with 403
+  readonly allowCreate = computed(() => this.auth.can('trips', 'create'));
+  readonly allowUpdate = computed(() => this.auth.can('trips', 'update'));
+  readonly allowDelete = computed(() => this.auth.can('trips', 'delete'));
 
   // ─── Data ──────────────────────────────────────────────────────
   trips      = signal<Trip[]>([]);
@@ -130,7 +137,10 @@ export class TripsComponent implements OnInit {
   // ─── Lifecycle ─────────────────────────────────────────────────
   ngOnInit(): void {
     this.loadTrips();
-    this.loadDropdowns();
+    // Route/vehicle/driver lists only feed the create/edit form
+    if (this.allowCreate() || this.allowUpdate()) {
+      this.loadDropdowns();
+    }
   }
 
   // ─── Data Loading ──────────────────────────────────────────────
@@ -406,17 +416,18 @@ export class TripsComponent implements OnInit {
     });
   }
 
+  // Status rules + permission: start/complete/delay/cancel/edit need trips:update
   canStart(trip: Trip): boolean {
-    return trip.status === 'scheduled' || trip.status === 'delayed';
+    return this.allowUpdate() && (trip.status === 'scheduled' || trip.status === 'delayed');
   }
-  canComplete(trip: Trip): boolean { return trip.status === 'in-progress'; }
+  canComplete(trip: Trip): boolean { return this.allowUpdate() && trip.status === 'in-progress'; }
   canCancel(trip: Trip): boolean {
-    return ['scheduled', 'delayed', 'in-progress'].includes(trip.status);
+    return this.allowUpdate() && ['scheduled', 'delayed', 'in-progress'].includes(trip.status);
   }
-  canDelay(trip: Trip): boolean { return trip.status === 'scheduled'; }
-  canDelete(trip: Trip): boolean { return trip.status === 'scheduled'; }
+  canDelay(trip: Trip): boolean { return this.allowUpdate() && trip.status === 'scheduled'; }
+  canDelete(trip: Trip): boolean { return this.allowDelete() && trip.status === 'scheduled'; }
   canEdit(trip: Trip): boolean {
-    return !['completed', 'cancelled'].includes(trip.status);
+    return this.allowUpdate() && !['completed', 'cancelled'].includes(trip.status);
   }
 
   /** Convert ISO → `datetime-local` value (strips Z, keeps local offset) */

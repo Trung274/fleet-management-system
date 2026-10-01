@@ -2,6 +2,7 @@ import { Component, OnInit, signal, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
+import { AuthService } from '../../core/services/auth.service';
 import { BookingService } from '../../core/services/booking.service';
 import { SeatService } from '../../core/services/seat.service';
 import { TripService } from '../../core/services/trip.service';
@@ -35,6 +36,14 @@ export class BookingsComponent implements OnInit {
   private seatService    = inject(SeatService);
   private tripService    = inject(TripService);
   private toastr         = inject(ToastrService);
+  private auth           = inject(AuthService);
+
+  // Hide actions the backend would reject with 403
+  readonly allowCreate = computed(() => this.auth.can('bookings', 'create'));
+  readonly allowUpdate = computed(() => this.auth.can('bookings', 'update'));
+  readonly allowDelete = computed(() => this.auth.can('bookings', 'delete'));
+  // Trip list feeds the trip filter and the create form
+  readonly allowReadTrips = computed(() => this.auth.can('trips', 'read'));
 
   // ─── Data ──────────────────────────────────────────────────────
   bookings    = signal<Booking[]>([]);
@@ -96,7 +105,9 @@ export class BookingsComponent implements OnInit {
   // ─── Lifecycle ─────────────────────────────────────────────────
   ngOnInit(): void {
     this.loadBookings();
-    this.loadTrips();
+    if (this.allowReadTrips()) {
+      this.loadTrips();
+    }
   }
 
   // ─── Data Loading ──────────────────────────────────────────────
@@ -308,9 +319,9 @@ export class BookingsComponent implements OnInit {
   }
 
   // Itinerary legs are confirmed/cancelled together from the Itineraries page
-  canConfirm(b: Booking): boolean  { return !b.itinerary && b.status === 'pending'; }
-  canCancel(b: Booking): boolean   { return !b.itinerary && b.status !== 'cancelled'; }
-  canDelete(b: Booking): boolean   { return !b.itinerary && b.status === 'cancelled'; }
+  canConfirm(b: Booking): boolean  { return this.allowUpdate() && !b.itinerary && b.status === 'pending'; }
+  canCancel(b: Booking): boolean   { return this.allowUpdate() && !b.itinerary && b.status !== 'cancelled'; }
+  canDelete(b: Booking): boolean   { return this.allowDelete() && !b.itinerary && b.status === 'cancelled'; }
 
   formatDatetime(iso?: string): string {
     if (!iso) return '—';

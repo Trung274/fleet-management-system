@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, inject } from '@angular/core';
+import { Component, OnInit, signal, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
@@ -30,6 +30,11 @@ interface StatCard {
 export class DashboardComponent implements OnInit {
   public authService = inject(AuthService);
   private dashboardService = inject(DashboardService);
+
+  // Show the quick-actions card only if the user can create at least one of these
+  hasQuickActions = computed(() =>
+    ['trips', 'bookings', 'vehicles', 'drivers'].some(res => this.authService.can(res, 'create')),
+  );
 
   // ─── State ─────────────────────────────────────────────────────
   isLoading = signal(true);

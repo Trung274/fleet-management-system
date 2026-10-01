@@ -2,6 +2,7 @@ import { Component, OnInit, signal, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
+import { AuthService } from '../../core/services/auth.service';
 import { DriverService } from '../../core/services/driver.service';
 import {
   Driver,
@@ -30,6 +31,12 @@ type ModalMode = 'create' | 'edit' | 'view';
 export class DriversComponent implements OnInit {
   private driverService = inject(DriverService);
   private toastr = inject(ToastrService);
+  private auth = inject(AuthService);
+
+  // Hide actions the backend would reject with 403
+  readonly allowCreate = computed(() => this.auth.can('drivers', 'create'));
+  readonly allowUpdate = computed(() => this.auth.can('drivers', 'update'));
+  readonly allowDelete = computed(() => this.auth.can('drivers', 'delete'));
 
   // ─── Data ──────────────────────────────────────────────────────
   drivers = signal<Driver[]>([]);
@@ -302,8 +309,8 @@ export class DriversComponent implements OnInit {
   getActions(d: Driver): MenuAction[] {
     return [
       { label: 'Xem chi tiết', iconPaths: this.EYE,   action: () => this.openViewModal(d) },
-      { label: 'Chỉnh sửa',   iconPaths: this.EDIT,  color: 'warning', action: () => this.openEditModal(d) },
-      { label: 'Xóa',         iconPaths: this.TRASH, color: 'danger',  disabled: !!this.isDeleting(), action: () => this.confirmDelete(d) },
+      ...(this.allowUpdate() ? [{ label: 'Chỉnh sửa', iconPaths: this.EDIT,  color: 'warning' as const, action: () => this.openEditModal(d) }] : []),
+      ...(this.allowDelete() ? [{ label: 'Xóa',       iconPaths: this.TRASH, color: 'danger' as const,  disabled: !!this.isDeleting(), action: () => this.confirmDelete(d) }] : []),
     ];
   }
 }

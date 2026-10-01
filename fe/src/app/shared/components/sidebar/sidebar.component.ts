@@ -9,6 +9,8 @@ interface NavItem {
   icon: string;
   /** Hidden unless the user has this permission (same as the page's route guard) */
   permission?: { resource: string; action: string };
+  /** Only for the admin role (backend uses authorize('admin'), not a permission) */
+  adminOnly?: boolean;
   children?: NavItem[];
 }
 
@@ -33,13 +35,15 @@ export class SidebarComponent {
     { label: 'Chuyến đi', route: '/trips', icon: 'trip', permission: { resource: 'trips', action: 'read' } },
     { label: 'Đặt vé', route: '/bookings', icon: 'booking', permission: { resource: 'bookings', action: 'read' } },
     { label: 'Hành trình', route: '/itineraries', icon: 'itinerary', permission: { resource: 'bookings', action: 'read' } },
+    { label: 'Phân quyền', route: '/roles', icon: 'roles', adminOnly: true },
   ];
 
   // can() reads the user's permission signals, so this updates when the user loads or changes
   visibleNavItems = computed(() =>
-    this.navItems.filter(
-      item => !item.permission || this.authService.can(item.permission.resource, item.permission.action),
-    ),
+    this.navItems.filter(item => {
+      if (item.adminOnly) return this.authService.isAdmin();
+      return !item.permission || this.authService.can(item.permission.resource, item.permission.action);
+    }),
   );
 
   get userInitial(): string {

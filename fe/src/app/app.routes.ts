@@ -82,6 +82,16 @@ export const routes: Routes = [
           ),
         ...requires('bookings'),
       },
+      {
+        // Backend restricts /roles and /permissions to the admin role itself
+        path: 'roles',
+        loadComponent: () =>
+          import('./features/roles/roles.component').then(
+            (m) => m.RolesComponent,
+          ),
+        canActivate: [permissionGuard],
+        data: { adminOnly: true },
+      },
     ],
   },
   { path: '**', redirectTo: 'dashboard' },

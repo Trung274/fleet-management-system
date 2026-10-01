@@ -196,6 +196,21 @@ export class AuthService {
     }
   }
 
+  // ─── Refresh user from backend ────────────────────────────────
+  // Picks up permission changes an admin made to this user's role since login.
+  // Silent on failure — the interceptor handles 401s.
+  async refreshUser(): Promise<void> {
+    if (!this.tokenStorage.getToken()) return;
+    try {
+      const response = await firstValueFrom(
+        this.http.get<{ success: boolean; data: User }>(`${this.apiUrl}/auth/me`),
+      );
+      this.updateUser(response.data);
+    } catch {
+      // Keep the cached user
+    }
+  }
+
   // ─── Helpers ──────────────────────────────────────────────────
   clearError(): void {
     this._error.set(null);

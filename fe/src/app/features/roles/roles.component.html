@@ -1,0 +1,130 @@
+<!-- ─── Page Header ─────────────────────────────────────────────── -->
+<div class="page-header">
+  <div class="page-header-left">
+    <h1 class="page-title">Vai Trò & Phân Quyền</h1>
+    <p class="page-subtitle">Chọn quyền cho từng vai trò. Menu và nút thao tác của người dùng sẽ thay đổi theo.</p>
+  </div>
+</div>
+
+<div class="info-banner">
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+  </svg>
+  <div>
+    <p><strong>Quản trị viên luôn có toàn quyền</strong> — hệ thống bỏ qua kiểm tra quyền với admin, nên cột này không chỉnh được.</p>
+    <p>Thay đổi có hiệu lực ngay với API. Người dùng đang đăng nhập sẽ thấy menu mới khi tải lại trang.</p>
+  </div>
+</div>
+
+@if (warnings().length) {
+  <div class="warning-banner">
+    <p class="warning-title">Một số vai trò có quyền thao tác nhưng thiếu quyền xem dữ liệu cần thiết:</p>
+    <ul>
+      @for (w of warnings(); track $index) {
+        <li><strong>{{ w.role }}</strong>: {{ w.message }}</li>
+      }
+    </ul>
+  </div>
+}
+
+<!-- ─── Matrix ───────────────────────────────────────────────────── -->
+<div class="table-card">
+  @if (isLoading()) {
+    <div class="loading-overlay">
+      <div class="spinner"></div>
+      <p>Đang tải...</p>
+    </div>
+  } @else {
+    <div class="table-wrap">
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th class="col-permission">Quyền</th>
+            @for (role of sortedRoles(); track role._id) {
+              <th class="col-role">
+                <span class="role-name" [class]="'role-name role-' + role.name">{{ roleLabel(role) }}</span>
+                <span class="role-count">
+                  @if (isAdmin(role)) { Toàn quyền } @else { {{ grantedCount(role) }}/{{ totalVisible() }} quyền }
+                </span>
+              </th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (group of groups(); track group.key) {
+            <tr class="group-row">
+              <td>{{ group.label }}</td>
+              @for (role of sortedRoles(); track role._id) {
+                <td class="cell">
+                  @if (!isAdmin(role)) {
+                    <button type="button" class="check"
+                      [class.checked]="groupState(role, group) === 'all'"
+                      [class.partial]="groupState(role, group) === 'some'"
+                      [attr.aria-label]="'Chọn tất cả quyền ' + group.label + ' cho ' + roleLabel(role)"
+                      title="Chọn / bỏ cả nhóm"
+                      (click)="toggleGroup(role, group)">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                        @if (groupState(role, group) === 'some') {
+                          <path stroke-linecap="round" d="M6 12h12" />
+                        } @else {
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M5 12.5l4.5 4.5L19 7.5" />
+                        }
+                      </svg>
+                    </button>
+                  }
+                </td>
+              }
+            </tr>
+
+            @for (perm of group.permissions; track perm._id) {
+              <tr class="perm-row" [class.perm-inactive]="!perm.isActive">
+                <td>
+                  <span class="perm-label">{{ permissionLabel(permKey(perm)) }}</span>
+                  <code class="perm-key">{{ permKey(perm) }}</code>
+                  @if (!perm.isActive) {
+                    <span class="inactive-tag" title="Quyền này đang bị tắt nên không có tác dụng">Đã tắt</span>
+                  }
+                </td>
+                @for (role of sortedRoles(); track role._id) {
+                  <td class="cell" [class.cell-changed]="isChanged(role, perm)">
+                    @if (isAdmin(role)) {
+                      <span class="check checked locked" title="Admin luôn có toàn quyền">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M5 12.5l4.5 4.5L19 7.5" />
+                        </svg>
+                      </span>
+                    } @else {
+                      <button type="button" class="check"
+                        [class.checked]="has(role, perm)"
+                        [attr.aria-pressed]="has(role, perm)"
+                        [attr.aria-label]="permissionLabel(permKey(perm)) + ' — ' + roleLabel(role)"
+                        (click)="toggle(role, perm)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M5 12.5l4.5 4.5L19 7.5" />
+                        </svg>
+                      </button>
+                    }
+                  </td>
+                }
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>
+
+<!-- ─── Save bar ─────────────────────────────────────────────────── -->
+@if (changeCount() > 0) {
+  <div class="save-bar">
+    <span><strong>{{ changeCount() }}</strong> thay đổi chưa lưu</span>
+    <div class="save-actions">
+      <button class="btn btn-secondary" [disabled]="isSaving()" (click)="resetDraft()">Hoàn tác</button>
+      <button class="btn btn-primary" [disabled]="isSaving()" (click)="save()">
+        @if (isSaving()) { <span class="spinner-sm"></span> }
+        Lưu thay đổi
+      </button>
+    </div>
+  </div>
+}

@@ -72,8 +72,8 @@ export class MainLayoutComponent implements OnInit {
   private authService = inject(AuthService);
 
   ngOnInit(): void {
-    // If token exists but user data wasn't restored from cookie (e.g. cookie too large,
-    // corrupt JSON, or SSR context), silently fetch from backend and re-persist.
-    this.authService.tryLoadUser();
+    // Always re-fetch the user on app load: restores it if the cookie was missing and
+    // picks up role permission changes, so the sidebar matches what the backend allows.
+    this.authService.refreshUser();
   }
 }

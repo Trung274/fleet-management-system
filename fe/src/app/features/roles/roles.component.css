@@ -1,0 +1,83 @@
+/* Shared page styles come from bookings.component.css — only matrix-specific rules here */
+
+/* ─── Banners ─────────────────────────────────────────────────── */
+.info-banner,
+.warning-banner {
+  display:flex; gap:10px; padding:.85rem 1rem; border-radius:12px;
+  font-size:.85rem; line-height:1.55; margin-bottom:1rem;
+}
+.info-banner { background:rgba(59,130,246,.07); border:1px solid rgba(59,130,246,.25); color:#cbd5e1; }
+.info-banner svg { width:20px; height:20px; flex-shrink:0; color:#60a5fa; margin-top:1px; }
+.info-banner p { margin:0; }
+.info-banner strong { color:#f1f5f9; }
+
+.warning-banner { flex-direction:column; gap:4px; background:rgba(245,158,11,.07); border:1px solid rgba(245,158,11,.3); color:#fcd34d; }
+.warning-title { margin:0; font-weight:600; }
+.warning-banner ul { margin:0; padding-left:1.25rem; color:#fde68a; }
+.warning-banner strong { color:#fbbf24; }
+
+/* ─── Matrix ──────────────────────────────────────────────────── */
+.matrix { width:100%; border-collapse:collapse; }
+.matrix thead th {
+  position:sticky; top:0; z-index:1;
+  background:#111a2e; padding:.85rem 1rem;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  font-size:.75rem; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:.05em;
+  text-align:left; white-space:nowrap;
+}
+.matrix .col-role { text-align:center; width:150px; }
+.role-name { display:block; font-size:.85rem; font-weight:700; text-transform:none; letter-spacing:0; }
+.role-admin   { color:#f87171; }
+.role-manager { color:#60a5fa; }
+.role-staff   { color:#4ade80; }
+.role-user    { color:#94a3b8; }
+.role-count { display:block; margin-top:2px; font-size:.7rem; font-weight:500; text-transform:none; letter-spacing:0; color:#64748b; }
+
+.matrix td { padding:.6rem 1rem; border-bottom:1px solid rgba(255,255,255,.05); vertical-align:middle; }
+.matrix .cell { text-align:center; }
+
+.group-row td {
+  background:rgba(255,255,255,.035);
+  font-size:.78rem; font-weight:700; color:#3b82f6; text-transform:uppercase; letter-spacing:.06em;
+  padding-top:.75rem; padding-bottom:.75rem;
+}
+
+.perm-row:hover td { background:rgba(255,255,255,.025); }
+.perm-label { font-size:.875rem; color:#e2e8f0; }
+.perm-key {
+  margin-left:8px; padding:1px 6px; border-radius:5px; font-size:.7rem;
+  background:rgba(255,255,255,.05); color:#64748b; font-family:ui-monospace, Consolas, monospace;
+}
+.perm-inactive .perm-label { color:#64748b; text-decoration:line-through; }
+.inactive-tag {
+  margin-left:6px; padding:1px 7px; border-radius:999px; font-size:.65rem; font-weight:700;
+  background:rgba(100,116,139,.15); color:#94a3b8; border:1px solid rgba(100,116,139,.3);
+}
+
+/* Cell changed but not saved yet */
+.cell-changed { background:rgba(245,158,11,.08); box-shadow:inset 0 0 0 1px rgba(245,158,11,.35); }
+
+/* ─── Checkbox ────────────────────────────────────────────────── */
+.check {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:22px; height:22px; padding:0; border-radius:6px; cursor:pointer;
+  border:1.5px solid rgba(255,255,255,.2); background:rgba(255,255,255,.03);
+  color:transparent; transition:all .15s;
+}
+.check svg { width:14px; height:14px; }
+.check:hover { border-color:#3b82f6; }
+.check:focus-visible { outline:2px solid #3b82f6; outline-offset:2px; }
+.check.checked, .check.partial { background:#3b82f6; border-color:#3b82f6; color:#fff; }
+.check.locked { cursor:default; background:rgba(239,68,68,.25); border-color:rgba(239,68,68,.4); color:#fca5a5; }
+
+/* ─── Save bar ────────────────────────────────────────────────── */
+.save-bar {
+  position:sticky; bottom:0; margin-top:1rem;
+  display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;
+  padding:.85rem 1.25rem; border-radius:14px;
+  background:#1e293b; border:1px solid rgba(245,158,11,.35);
+  box-shadow:0 -8px 30px rgba(0,0,0,.4);
+  font-size:.875rem; color:#cbd5e1;
+}
+.save-bar strong { color:#fbbf24; }
+.save-actions { display:flex; gap:.6rem; }

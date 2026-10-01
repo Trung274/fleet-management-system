@@ -20,14 +20,19 @@ export const permissionGuard: CanActivateFn = async (route) => {
   const router = inject(Router);
   const toastr = inject(ToastrService);
   const required = route.data['permission'] as RoutePermission | undefined;
-  if (!required) return true;
+  // Some backend routes check the role name (authorize('admin')), not a permission
+  const adminOnly = route.data['adminOnly'] === true;
+  if (!required && !adminOnly) return true;
 
   // After a refresh the user may not be restored yet — load it before deciding
   if (!auth.user()) {
     await auth.tryLoadUser();
   }
 
-  if (auth.can(required.resource, required.action)) {
+  const allowed = adminOnly
+    ? auth.isAdmin()
+    : auth.can(required!.resource, required!.action);
+  if (allowed) {
     return true;
   }
 

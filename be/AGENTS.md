@@ -106,6 +106,11 @@ docs/                    # TEST_REPORT_* sinh bởi `npm run test:report`
 | Admin khóa tài khoản (`isActive: false`) → xóa mọi refresh token; `protect` từ chối access token của user bị khóa | `user.controller.js` (`updateUser`) |
 | Admin không tự đổi role, tự khóa hay tự xóa chính mình (400) | `user.controller.js` |
 | Mỗi JWT có `jti` ngẫu nhiên — tránh 2 token trùng nhau khi tạo trong cùng 1 giây | `auth.controller.js` |
+| Xe không chạy chuyến khi **có lịch bảo dưỡng** (scheduled / in-progress) chồng giờ, hoặc **hết hạn đăng kiểm** trước giờ đến (hết ngày, như bằng lái) | `checkVehicleCanRun` trong `trip.controller.js` — tạo, đổi xe/giờ, `/start` |
+| Lên lịch / sửa bảo dưỡng chồng lên chuyến của xe → **409** + `data.conflictingTrips` (phải đổi xe cho chuyến trước); chồng lên bảo dưỡng khác → 400 | `maintenance.controller.js` (`rejectIfWindowTaken`) |
+| Bắt đầu bảo dưỡng → xe `maintenance`; hoàn thành → `active` (định kỳ: cập nhật `lastMaintenanceAt`; đăng kiểm: bắt buộc nhập `inspectionExpiry` mới); hủy khi đang làm → `active` | `maintenance.controller.js` |
+| `GET /notifications` **tính khi gọi**, không lưu; mỗi nhóm cảnh báo chỉ trả khi user có quyền đọc tương ứng (vehicles / maintenance / drivers / trips / bookings). `id` ổn định, đổi khi tình huống đổi (sắp hết hạn → đã hết hạn) | `notification.controller.js` |
+| Hàm lịch dùng chung: `endOfDay`, `findConflictingTrips`, `findConflictingMaintenance` | `utils/schedule.js` |
 
 ---
 
@@ -141,6 +146,7 @@ npm test                                               # tất cả + coverage
 | `vehicle/route.api.test.js` | CRUD + 403 khi staff thiếu quyền `read` |
 | `driver.api.test.js` | CRUD tài xế |
 | `user.api.test.js` | Quản lý tài khoản (admin): tạo, lọc, đổi role, khóa/mở khóa, tự bảo vệ, xóa |
+| `maintenance.api.test.js` | Lịch bảo dưỡng, 409 khi trùng chuyến, chặn chuyến khi bảo dưỡng / hết đăng kiểm, start/complete, notifications theo quyền |
 | `trip.api.test.js` | CRUD, trạng thái, trùng lịch, thời gian nghỉ tài xế, hạn bằng lái, ghế tạo kèm chuyến |
 | `seat.api.test.js` | Khởi tạo (kèm loại ghế theo vị trí), sơ đồ, cập nhật trạng thái |
 | `booking.api.test.js` | Vòng đời đặt vé, đặt ghế đã có người giữ → 409, phân quyền staff |
@@ -150,7 +156,9 @@ npm test                                               # tất cả + coverage
 
 ## Seed
 
-- `npm run seed:all` chạy lần lượt: roles & permissions (+ admin) → users → vehicles → drivers → routes → trips → bookings/seats/itineraries. **Mỗi bước xóa dữ liệu cũ của nó.**
+- `npm run seed:all` chạy lần lượt: roles & permissions (+ admin) → users → vehicles → drivers → routes → trips → bookings/seats/itineraries → maintenance. **Mỗi bước xóa dữ liệu cũ của nó.**
+- Seed xe/tài xế/bảo dưỡng đặt ngày **tương đối với hôm nay** để chuông có đủ loại cảnh báo (quá hạn bảo dưỡng, đăng kiểm sắp/đã hết hạn, bằng lái sắp hết hạn, lịch bảo dưỡng sắp tới). `seedMaintenance.js` bỏ qua lịch nào trùng chuyến.
+- **DB đã có dữ liệu thật** mà cần quyền mới: dùng migration bổ sung thay vì seed lại (seed xóa role/user và các chỉnh sửa quyền trên UI). Vd. `npm run migrate:maintenance` thêm `maintenance:*` và cấp cho admin + manager — chạy được nhiều lần.
 - Seed có sẵn tuyến nối tiếp (`HN-TB-01 → TB-ND-01`, `HN-HP-01 → HP-HL-01`) và 2 hành trình mẫu: 1 đã xác nhận, 1 đang "lỡ nối chuyến" (chặng 1 trễ 45 phút) để demo.
 - Lịch seed đã kiểm tra không vi phạm quy tắc nghỉ của tài xế / trùng xe — giữ nguyên khi sửa.
 

@@ -49,6 +49,7 @@ src/
 │   │   ├── dashboard/  vehicles/  drivers/  routes/  trips/
 │   │   ├── bookings/                  # Đặt vé 1 chuyến
 │   │   ├── itineraries/               # Hành trình nhiều chặng (nhiều booking)
+│   │   ├── maintenance/               # Lịch bảo dưỡng & đăng kiểm (quyền maintenance:*)
 │   │   ├── users/                     # Quản lý tài khoản: tạo, đổi role, khóa/mở khóa, xóa (chỉ admin)
 │   │   ├── roles/                     # Ma trận phân quyền (chỉ admin)
 │   │   └── profile/                   # Hồ sơ của tôi (mở từ menu avatar)
@@ -325,6 +326,17 @@ Sơ đồ ghế theo bố cục xe thật, dùng cho form Đặt vé và từng 
 - ⚠️ `seat-layout.ts` **phải giữ đồng bộ** với `be/src/utils/seatLayout.js` (BE dùng để gán loại ghế `priority/window/aisle` theo vị trí)
 
 ---
+
+## Thông báo (chuông trên header)
+
+- Dữ liệu thật từ `GET /notifications` (BE tính khi gọi, đã lọc theo quyền) qua `NotificationService` — **không** có dữ liệu mẫu trong component.
+- Làm mới khi mở app, mỗi 5 phút, khi mở chuông, và sau thao tác làm thay đổi cảnh báo (vd. trang Bảo dưỡng gọi `notificationService.refresh()`).
+- "Đã đọc" lưu ở `localStorage` (`fleet.notifications.read`, theo trình duyệt). `id` cảnh báo đổi khi tình huống đổi → hiện lại là chưa đọc. Cảnh báo tự biến mất khi vấn đề được xử lý.
+- Bấm cảnh báo → đánh dấu đã đọc + điều hướng tới `link`.
+
+## Hạn dùng (bằng lái, đăng kiểm)
+
+`core/utils/expiry.ts`: `validUntilEndOfDay`, `expiryDaysLeft`, `expiryStatus`, `expiryLabel` — cùng quy tắc "còn hiệu lực hết ngày" như BE. Dùng cho nhãn ở trang Tài xế / Xe và cảnh báo trong form Chuyến đi (xe đang bảo dưỡng hoặc hết đăng kiểm trong khung giờ bị khóa trong dropdown).
 
 ## Module: Bookings, Seats & Itineraries
 

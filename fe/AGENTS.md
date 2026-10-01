@@ -334,6 +334,13 @@ Sơ đồ ghế theo bố cục xe thật, dùng cho form Đặt vé và từng 
 - "Đã đọc" lưu ở `localStorage` (`fleet.notifications.read`, theo trình duyệt). `id` cảnh báo đổi khi tình huống đổi → hiện lại là chưa đọc. Cảnh báo tự biến mất khi vấn đề được xử lý.
 - Bấm cảnh báo → đánh dấu đã đọc + điều hướng tới `link`.
 
+## Dashboard
+
+- Mọi phần của `DashboardData` là optional: BE bỏ phần user không có quyền → template dùng `@if (section(); as x)` và **ẩn** thay vì hiện 0.
+- Thẻ KPI có so sánh với hôm qua; "Lịch chạy hôm nay" tô nổi chuyến đang chạy / sắp khởi hành trong 60 phút; "Cần xử lý" lấy 5 cảnh báo đầu từ `NotificationService`.
+- Biểu đồ 7 ngày là HTML/CSS thuần (không thư viện): một chuỗi số liệu (doanh thu đã xác nhận), tooltip khi hover/focus, kèm bảng ẩn cho screen reader. Không vẽ trục kép — số vé / chờ xác nhận nằm trong tooltip.
+- Tự làm mới mỗi 2 phút.
+
 ## Hạn dùng (bằng lái, đăng kiểm)
 
 `core/utils/expiry.ts`: `validUntilEndOfDay`, `expiryDaysLeft`, `expiryStatus`, `expiryLabel` — cùng quy tắc "còn hiệu lực hết ngày" như BE. Dùng cho nhãn ở trang Tài xế / Xe và cảnh báo trong form Chuyến đi (xe đang bảo dưỡng hoặc hết đăng kiểm trong khung giờ bị khóa trong dropdown).

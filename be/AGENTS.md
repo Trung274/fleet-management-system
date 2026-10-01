@@ -111,6 +111,7 @@ docs/                    # TEST_REPORT_* sinh bởi `npm run test:report`
 | Bắt đầu bảo dưỡng → xe `maintenance`; hoàn thành → `active` (định kỳ: cập nhật `lastMaintenanceAt`; đăng kiểm: bắt buộc nhập `inspectionExpiry` mới); hủy khi đang làm → `active` | `maintenance.controller.js` |
 | `GET /notifications` **tính khi gọi**, không lưu; mỗi nhóm cảnh báo chỉ trả khi user có quyền đọc tương ứng (vehicles / maintenance / drivers / trips / bookings). `id` ổn định, đổi khi tình huống đổi (sắp hết hạn → đã hết hạn) | `notification.controller.js` |
 | Hàm lịch dùng chung: `endOfDay`, `findConflictingTrips`, `findConflictingMaintenance` | `utils/schedule.js` |
+| `GET /dashboard` chỉ trả các phần user được đọc: `trips` (trips:read), `seats` (+ seats:read), `revenue` (bookings:read), `vehicles`, `drivers`. **Doanh thu = giá vé `confirmed` theo ngày đặt (`bookedAt`)**, vé `pending` báo riêng; "hôm nay" theo giờ server | `dashboard.controller.js` |
 
 ---
 

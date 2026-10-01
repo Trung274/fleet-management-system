@@ -10,6 +10,7 @@ require('../models/Role.model');
 require('../models/Permission.model');
 const connectDB = require('../config/database');
 const errorHandler = require('../middleware/errorHandler');
+const { loginAsTempUser } = require('./helpers/tempUser');
 
 // Create Express app for testing
 const app = express();
@@ -452,17 +453,18 @@ describe('Route API Tests', () => {
 
   // Security Tests
   describe('[Security] Authentication and Authorization', () => {
-    test('[Security] Staff without routes:read gets 403 on list', async () => {
-      const login = await request(app)
-        .post('/api/v1/auth/login')
-        .send({ email: 'staff@example.com', password: 'Staff@123' });
-      expect(login.body.data?.token).toBeDefined();
-
-      const response = await request(app)
-        .get('/api/v1/routes')
-        .set('Authorization', `Bearer ${login.body.data.token}`);
-
-      expect(response.status).toBe(403);
+    test('[Security] A role without routes:read gets 403 on list', async () => {
+      // 'user' role only has profile permissions by default (staff's can be changed in the UI)
+      const temp = await loginAsTempUser(app, 'user');
+      try {
+        expect(temp.lacks('routes', 'read')).toBe(true);
+        const response = await request(app)
+          .get('/api/v1/routes')
+          .set('Authorization', 'Bearer ' + temp.token);
+        expect(response.status).toBe(403);
+      } finally {
+        await temp.cleanup();
+      }
     });
 
     test('[Security] Require authentication for route access', async () => {

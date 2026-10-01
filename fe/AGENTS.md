@@ -49,6 +49,7 @@ src/
 │   │   ├── dashboard/  vehicles/  drivers/  routes/  trips/
 │   │   ├── bookings/                  # Đặt vé 1 chuyến
 │   │   ├── itineraries/               # Hành trình nhiều chặng (nhiều booking)
+│   │   ├── users/                     # Quản lý tài khoản: tạo, đổi role, khóa/mở khóa, xóa (chỉ admin)
 │   │   ├── roles/                     # Ma trận phân quyền (chỉ admin)
 │   │   └── profile/                   # Hồ sơ của tôi (mở từ menu avatar)
 │   ├── shared/components/
@@ -316,6 +317,7 @@ Sơ đồ ghế theo bố cục xe thật, dùng cho form Đặt vé và từng 
 | `seats` | `Seat[]` | **Tất cả** ghế của chuyến (mọi status) — gọi `getSeatMap(tripId)` **không** truyền `'available'` |
 | `selectedId` | `string` | Ghế đang chọn |
 | `fare` | `number?` | Giá hiển thị ở dòng tóm tắt |
+| `readonly` | `boolean` | Chỉ xem, không chọn được (dùng trong Chi tiết chuyến) |
 | `selectedIdChange` | `string` | Emit id ghế; `''` khi bỏ chọn |
 
 - Chỉ ghế `available` bấm được; ghế `reserved` / `booked` / `unavailable` hiển thị nhưng bị khóa

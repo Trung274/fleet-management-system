@@ -100,7 +100,12 @@ docs/                    # TEST_REPORT_* sinh bởi `npm run test:report`
 | Chặng sau của hành trình xuất phát đúng điểm đến chặng trước (so khớp tên, không phân biệt hoa thường) và sau ≥ `MIN_TRANSFER_MINUTES` | `createItinerary` |
 | `GET /itineraries/:id` tính lại `connections` + `atRisk` theo giờ trễ hiện tại (không lưu) | `getItineraryById` |
 | Booking thuộc hành trình không được confirm/cancel/xóa lẻ qua `/bookings` (400) | `booking.controller.js` |
-| Loại ghế (`priority/window/aisle/standard`) suy ra từ vị trí khi khởi tạo | `utils/seatLayout.js` → `POST /seats/initialize`, seed |
+| Loại ghế (`priority/window/aisle/standard`) suy ra từ vị trí khi khởi tạo | `utils/seatLayout.js` (`buildSeatDocs`) → tạo chuyến, `POST /seats/initialize`, seed |
+| Tạo chuyến qua API **tự tạo sơ đồ ghế**; đổi xe chỉ khi chuyến chưa có booking nào (kể cả đã hủy) và ghế được tạo lại; xóa chuyến có booking → 400 | `trip.controller.js` |
+| `POST /seats/initialize` chỉ còn dùng cho chuyến cũ chưa có ghế | `seat.controller.js` |
+| Admin khóa tài khoản (`isActive: false`) → xóa mọi refresh token; `protect` từ chối access token của user bị khóa | `user.controller.js` (`updateUser`) |
+| Admin không tự đổi role, tự khóa hay tự xóa chính mình (400) | `user.controller.js` |
+| Mỗi JWT có `jti` ngẫu nhiên — tránh 2 token trùng nhau khi tạo trong cùng 1 giây | `auth.controller.js` |
 
 ---
 
@@ -124,6 +129,8 @@ npm test                                               # tất cả + coverage
    require('../models/RouteStop.model'); // khi populate route.stops
    ```
 3. Test cần dữ liệu seed: user `admin@example.com` / `staff@example.com`, role `staff`, ít nhất 1 route/vehicle/driver active.
+   **Quyền của role sửa được trên UI** → đừng giả định staff thiếu quyền nào. Cần "user không có quyền X" thì dùng `loginAsTempUser(app, 'user')` trong `tests/helpers/tempUser.js` (có `lacks()` để kiểm tra tiền điều kiện và `cleanup()`).
+   Đừng đặt chuyến test vào "ngày mai": seed có chuyến trong vài ngày tới, quy tắc nghỉ 30 phút sẽ làm test va chạm — dùng ngày xa (trip test dùng `TEST_DAY_OFFSET = 20`).
 4. Một kết nối DB cho cả file: đóng trong `afterAll` **cấp ngoài cùng** nếu file có nhiều `describe`.
 5. JWT `iat` chính xác tới giây — test đổi mật khẩu chờ > 1s sau khi login để token cũ chắc chắn bị vô hiệu.
 6. Muốn thử an toàn: chạy MongoDB local (`MONGODB_URI=mongodb://127.0.0.1:27017/fleet_test`), `npm run seed:all`, chạy test, rồi drop DB đó (lưu ý: hành trình cần replica set nên test itinerary sẽ lỗi trên MongoDB standalone).
@@ -133,7 +140,8 @@ npm test                                               # tất cả + coverage
 | `auth.api.test.js` | Đổi mật khẩu, xoay vòng refresh token, đăng xuất theo thiết bị |
 | `vehicle/route.api.test.js` | CRUD + 403 khi staff thiếu quyền `read` |
 | `driver.api.test.js` | CRUD tài xế |
-| `trip.api.test.js` | CRUD, trạng thái, trùng lịch, thời gian nghỉ tài xế, hạn bằng lái |
+| `user.api.test.js` | Quản lý tài khoản (admin): tạo, lọc, đổi role, khóa/mở khóa, tự bảo vệ, xóa |
+| `trip.api.test.js` | CRUD, trạng thái, trùng lịch, thời gian nghỉ tài xế, hạn bằng lái, ghế tạo kèm chuyến |
 | `seat.api.test.js` | Khởi tạo (kèm loại ghế theo vị trí), sơ đồ, cập nhật trạng thái |
 | `booking.api.test.js` | Vòng đời đặt vé, đặt ghế đã có người giữ → 409, phân quyền staff |
 | `itinerary.api.test.js` | Hành trình nhiều chặng, transaction rollback, `atRisk` |

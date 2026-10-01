@@ -4,6 +4,9 @@ const express = require('express');
 require('dotenv').config();
 
 const Driver = require('../models/Driver.model');
+// Ensure all schemas are registered for Mongoose population (login populates role.permissions)
+require('../models/Role.model');
+require('../models/Permission.model');
 const connectDB = require('../config/database');
 const errorHandler = require('../middleware/errorHandler');
 

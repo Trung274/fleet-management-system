@@ -157,6 +157,16 @@ const seedDrivers = async () => {
     ]);
 
     console.log('✓ Created sample drivers');
+
+    // One active driver whose license expires soon, so the header bell has a real alert.
+    // Trips only use the next few days, so this does not block any seeded trip.
+    const soon = new Date();
+    const expiringDriver = drivers.find(d => d.firstName === 'Hoàng G');
+    if (expiringDriver) {
+      expiringDriver.licenseExpiry = new Date(Date.UTC(soon.getFullYear(), soon.getMonth(), soon.getDate() + 15));
+      await expiringDriver.save();
+      console.log('✓ Set a license expiring in 15 days (Hoàng G Đinh)');
+    }
     console.log('\n🎉 Driver seed completed successfully!');
     console.log(`\n📊 Summary:`);
     console.log(`   Drivers created: ${drivers.length}`);

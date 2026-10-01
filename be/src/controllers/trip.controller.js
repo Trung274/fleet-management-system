@@ -5,6 +5,7 @@ const Driver = require('../models/Driver.model');
 const Seat = require('../models/Seat.model');
 const Booking = require('../models/Booking.model');
 const { buildSeatDocs } = require('../utils/seatLayout');
+const { endOfDay, formatDate, formatDateTime, findConflictingMaintenance } = require('../utils/schedule');
 const asyncHandler = require('../utils/asyncHandler');
 const ErrorResponse = require('../utils/errorResponse');
 
@@ -73,21 +74,28 @@ const validateStatusTransition = (currentStatus, newStatus) => {
   return validTransitions[currentStatus]?.includes(newStatus) || false;
 };
 
+// Returns an error message if the driver's license expires before the trip ends, otherwise null.
 // A license is valid through the end of its expiry date.
-// licenseExpiry is stored as UTC midnight of the calendar date (FE sends YYYY-MM-DD),
-// so take the UTC date parts and end that day in server local time.
-const licenseValidUntil = (licenseExpiry) => {
-  const d = new Date(licenseExpiry);
-  return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 23, 59, 59, 999);
-};
-
-const formatDate = (date) => date.toLocaleDateString('en-GB'); // DD/MM/YYYY
-
-// Returns an error message if the driver's license expires before the trip ends, otherwise null
 const checkLicenseCoversTrip = (driverDoc, tripEnd) => {
-  const validUntil = licenseValidUntil(driverDoc.licenseExpiry);
+  const validUntil = endOfDay(driverDoc.licenseExpiry);
   if (validUntil >= tripEnd) return null;
   return `Driver's license expires on ${formatDate(validUntil)}, before the trip ends`;
+};
+
+// Returns an error message if the vehicle cannot run [start, end): inspection expired
+// before the trip ends, or maintenance scheduled in that window. Otherwise null.
+const checkVehicleCanRun = async (vehicleDoc, start, end) => {
+  if (vehicleDoc.inspectionExpiry) {
+    const validUntil = endOfDay(vehicleDoc.inspectionExpiry);
+    if (validUntil < end) {
+      return `Vehicle inspection expires on ${formatDate(validUntil)}, before the trip ends`;
+    }
+  }
+  const [maintenance] = await findConflictingMaintenance(vehicleDoc._id, start, end);
+  if (maintenance) {
+    return `Vehicle has maintenance scheduled from ${formatDateTime(maintenance.scheduledStart)} to ${formatDateTime(maintenance.scheduledEnd)}`;
+  }
+  return null;
 };
 
 // Arrival including any reported delay
@@ -150,6 +158,12 @@ exports.createTrip = asyncHandler(async (req, res, next) => {
   const licenseError = checkLicenseCoversTrip(driverDoc, arrTime);
   if (licenseError) {
     return next(new ErrorResponse(licenseError, 400));
+  }
+
+  // Vehicle must be inspected and not booked for maintenance during the trip
+  const vehicleError = await checkVehicleCanRun(vehicleDoc, depTime, arrTime);
+  if (vehicleError) {
+    return next(new ErrorResponse(vehicleError, 400));
   }
 
   // Check vehicle availability
@@ -409,6 +423,17 @@ exports.updateTrip = asyncHandler(async (req, res, next) => {
     }
   }
 
+  // Re-check inspection / maintenance when the vehicle or the times change
+  if (req.body.vehicle || req.body.scheduledDeparture || req.body.scheduledArrival) {
+    const vehicleDoc = await Vehicle.findById(req.body.vehicle || trip.vehicle);
+    const scheduledDeparture = req.body.scheduledDeparture ? new Date(req.body.scheduledDeparture) : trip.scheduledDeparture;
+    const scheduledArrival = req.body.scheduledArrival ? new Date(req.body.scheduledArrival) : trip.scheduledArrival;
+    const vehicleError = vehicleDoc && await checkVehicleCanRun(vehicleDoc, scheduledDeparture, scheduledArrival);
+    if (vehicleError) {
+      return next(new ErrorResponse(vehicleError, 400));
+    }
+  }
+
   // Whitelist updatable fields — prevent clients from directly setting internal fields
   // like actualDeparture, actualArrival (those are set by /start, /complete actions only)
   const allowedFields = ['route', 'vehicle', 'driver', 'scheduledDeparture', 'scheduledArrival',
@@ -493,6 +518,13 @@ exports.startTrip = asyncHandler(async (req, res, next) => {
   const licenseError = driverDoc && checkLicenseCoversTrip(driverDoc, expectedArrival(trip));
   if (licenseError) {
     return next(new ErrorResponse(`${licenseError}. Assign another driver before starting`, 400));
+  }
+
+  // Same for the vehicle: inspection may have lapsed or maintenance been planned since
+  const vehicleDoc = await Vehicle.findById(trip.vehicle);
+  const vehicleError = vehicleDoc && await checkVehicleCanRun(vehicleDoc, new Date(), expectedArrival(trip));
+  if (vehicleError) {
+    return next(new ErrorResponse(`${vehicleError}. Assign another vehicle before starting`, 400));
   }
 
   // Update trip

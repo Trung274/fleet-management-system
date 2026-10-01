@@ -10,6 +10,7 @@ const scripts = [
   { name: 'Routes',              file: 'seedRoutes.js' },
   { name: 'Trips',               file: 'seedTrips.js' },
   { name: 'Bookings & Seats',    file: 'seedBookings.js' },
+  { name: 'Maintenance',         file: 'seedMaintenance.js' },
 ];
 
 console.log('🚀 Fleet Management System — Full Database Seed');

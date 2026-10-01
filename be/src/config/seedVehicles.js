@@ -100,6 +100,28 @@ const seedVehicles = async () => {
     ]);
 
     console.log('✓ Created sample vehicles');
+
+    // Inspection / maintenance dates relative to today, chosen so the header bell has
+    // real alerts to show. Days: positive = in the future, negative = in the past.
+    const MAINTENANCE_INFO = {
+      '29B-123.45': { inspection: 200, lastMaintenance: -95 },  // periodic maintenance overdue
+      '30F-987.65': { inspection: 20,  lastMaintenance: -30 },  // inspection expiring in 20 days
+      '15B-456.78': { inspection: 300, lastMaintenance: -120 }, // in the garage now (seedMaintenance.js)
+      '14B-321.09': { inspection: -10, lastMaintenance: -200 }, // inspection expired
+      '29B-555.55': { inspection: 150, lastMaintenance: -84 },  // due in 6 days — already planned
+      '15B-888.99': { inspection: 400, lastMaintenance: -10 },
+    };
+    const today = new Date();
+    // Date-only values are stored as UTC midnight, like the frontend's date inputs
+    const dateOnly = days => new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate() + days));
+    for (const v of vehicles) {
+      const info = MAINTENANCE_INFO[v.registrationNumber];
+      if (!info) continue;
+      v.inspectionExpiry = dateOnly(info.inspection);
+      v.lastMaintenanceAt = new Date(today.getTime() + info.lastMaintenance * 24 * 60 * 60 * 1000);
+      await v.save();
+    }
+    console.log('✓ Set inspection and maintenance dates');
     console.log('\n🎉 Vehicle seed completed successfully!');
     console.log(`\n📊 Summary:`);
     console.log(`   Vehicles created: ${vehicles.length}`);

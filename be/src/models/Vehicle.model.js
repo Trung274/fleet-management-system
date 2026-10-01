@@ -51,11 +51,31 @@ const vehicleSchema = new mongoose.Schema({
   notes: {
     type: String,
     trim: true
+  },
+
+  // Inspection (đăng kiểm) — valid through the end of this date; trips must end before it
+  inspectionExpiry: {
+    type: Date
+  },
+  // Periodic maintenance: due every N days after the last one
+  maintenanceIntervalDays: {
+    type: Number,
+    min: [1, 'Maintenance interval must be at least 1 day'],
+    default: 90
+  },
+  lastMaintenanceAt: {
+    type: Date
   }
 }, {
   timestamps: true,
   toJSON: { virtuals: true },
   toObject: { virtuals: true }
+});
+
+// Next periodic maintenance date (unknown until a first maintenance is recorded)
+vehicleSchema.virtual('nextMaintenanceDue').get(function() {
+  if (!this.lastMaintenanceAt || !this.maintenanceIntervalDays) return null;
+  return new Date(this.lastMaintenanceAt.getTime() + this.maintenanceIntervalDays * 24 * 60 * 60 * 1000);
 });
 
 // Indexes for performance

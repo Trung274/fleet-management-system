@@ -333,5 +333,7 @@ module.exports = {
   confirmItinerary,
   cancelItinerary,
   getAllItineraries,
-  getItineraryById
+  getItineraryById,
+  // Shared with the notifications feed (itineraries at risk of a missed connection)
+  describeConnection
 };

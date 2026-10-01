@@ -82,6 +82,12 @@ const seedData = async () => {
       { resource: 'bookings', action: 'read', description: 'View booking details' },
       { resource: 'bookings', action: 'update', description: 'Confirm or cancel bookings' },
       { resource: 'bookings', action: 'delete', description: 'Delete booking records' },
+
+      // Maintenance & inspection schedule
+      { resource: 'maintenance', action: 'create', description: 'Schedule vehicle maintenance' },
+      { resource: 'maintenance', action: 'read', description: 'View maintenance schedule' },
+      { resource: 'maintenance', action: 'update', description: 'Edit, start, complete or cancel maintenance' },
+      { resource: 'maintenance', action: 'delete', description: 'Delete maintenance records' },
     ]);
     console.log('✓ Created permissions');
 
@@ -96,7 +102,7 @@ const seedData = async () => {
 
     // 3. Tạo Manager Role (full operational access + seats + bookings)
     const managerPermissions = permissions
-      .filter(p => ['vehicles', 'drivers', 'routes', 'trips', 'seats', 'bookings', 'profile'].includes(p.resource))
+      .filter(p => ['vehicles', 'drivers', 'routes', 'trips', 'seats', 'bookings', 'maintenance', 'profile'].includes(p.resource))
       .map(p => p._id);
 
     const managerRole = await Role.create({

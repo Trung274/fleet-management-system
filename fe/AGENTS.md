@@ -2,32 +2,28 @@
 
 ## Tổng quan
 
-Frontend Angular 21 cho hệ thống quản lý xe, kết nối với Backend API tại `http://localhost:5000/api/v1`.
+Frontend Angular 21 cho hệ thống quản lý xe khách, gọi Backend API (`/api/v1`). Backend có tài liệu riêng ở [`../be/AGENTS.md`](../be/AGENTS.md).
 
-- **Framework**: Angular 21 (Standalone Components, SSR với RenderMode.Client)
+- **Framework**: Angular 21 (Standalone Components, chạy thuần client — SSR đã tắt khi build)
 - **Styling**: Tailwind CSS v4 + Vanilla CSS (component-scoped)
 - **HTTP Client**: Angular `HttpClient` (built-in)
 - **State**: Angular **Signals** (built-in, không dùng thư viện ngoài)
 - **Cookie**: `ngx-cookie-service`
 - **Toast**: `ngx-toastr` ← **TOÀN BỘ thông báo user dùng toast, KHÔNG dùng alert()**
 - **Dev server**: `http://localhost:4200`
+- **Deploy**: Netlify (`../netlify.toml`) — xem [Deploy](#deploy)
 
 ---
 
 ## Khởi động
 
 ```bash
-# Cài dependencies
 npm install
-
-# Chạy dev server
-npm start          # → http://localhost:4200
-
-# Build production
-npm run build
+npm start          # → http://localhost:4200 (HMR)
+npm run build      # production → dist/bus-management/browser
 ```
 
-> ⚠️ **Yêu cầu**: Backend phải chạy tại `http://localhost:5000` trước.
+> ⚠️ **Yêu cầu**: Backend phải chạy tại `http://localhost:5000` trước. Nên chạy BE bằng `npm run dev` (nodemon) — chạy `node src/server.js` thì sửa code BE xong phải tự restart.
 
 ---
 
@@ -36,119 +32,133 @@ npm run build
 ```
 src/
 ├── environments/
-│   └── environment.ts              # API URL config (thay cho .env)
+│   ├── environment.ts                 # API URL khi dev (localhost:5000)
+│   └── environment.production.ts      # API URL production (Render) — thay qua fileReplacements
 ├── app/
-│   ├── core/                       # Singleton services, guards, interceptors
-│   │   ├── models/
-│   │   │   ├── auth.model.ts       # User, LoginCredentials, LoginResponse…
-│   │   │   └── vehicle.model.ts    # Vehicle, VehicleCreatePayload…
-│   │   ├── services/
-│   │   │   ├── auth.service.ts     # Auth state (Signals) + API calls
-│   │   │   ├── token-storage.service.ts  # Cookie CRUD cho token/user
-│   │   │   └── vehicle.service.ts  # CRUD service cho Vehicles
+│   ├── core/                          # Singleton: services, guards, interceptors, models
+│   │   ├── constants/permissions.ts   # Nhãn tiếng Việt cho role/permission (dùng chung)
 │   │   ├── guards/
-│   │   │   └── auth.guard.ts       # Platform-aware guard → redirect /login
-│   │   └── interceptors/
-│   │       └── auth.interceptor.ts # Bearer token + auto-refresh on 401
-│   ├── features/                   # Lazy-loaded pages
-│   │   ├── auth/login/             # Trang đăng nhập (standalone, không có sidebar)
-│   │   ├── main-layout/            # Layout shell: sidebar + header + router-outlet
-│   │   ├── dashboard/              # Dashboard (child của main-layout)
-│   │   └── vehicles/               # Quản lý xe CRUD (child của main-layout)
-│   ├── shared/                     # Components dùng chung
-│   │   └── components/
-│   │       ├── header/             # Topbar: breadcrumb trái + user dropdown phải
-│   │       ├── sidebar/            # Sidebar collapsible với nav + user footer
-│   │       └── loading-spinner/    # Spinner overlay
-│   ├── app.config.ts               # Root providers: HttpClient, Toastr, Router
-│   ├── app.routes.ts               # Route tree (layout-based)
-│   ├── app.routes.server.ts        # SSR config: RenderMode.Client cho tất cả routes
-│   ├── app.ts                      # Root component
-│   └── app.html                    # <router-outlet /> only
-└── styles.css                      # Global dark theme + Inter font + Toastr override
+│   │   │   ├── auth.guard.ts          # Chưa đăng nhập → /login
+│   │   │   └── permission.guard.ts    # Thiếu quyền → /dashboard + toast
+│   │   ├── interceptors/auth.interceptor.ts  # Gắn Bearer token + tự refresh khi 401
+│   │   ├── models/                    # auth, booking, dashboard, driver, itinerary, role, route, seat, trip, vehicle
+│   │   └── services/                  # auth, token-storage + 1 service / resource
+│   ├── features/                      # Trang lazy-load (con của main-layout, trừ login)
+│   │   ├── auth/login/
+│   │   ├── main-layout/               # Shell: sidebar + header + router-outlet
+│   │   ├── dashboard/  vehicles/  drivers/  routes/  trips/
+│   │   ├── bookings/                  # Đặt vé 1 chuyến
+│   │   ├── itineraries/               # Hành trình nhiều chặng (nhiều booking)
+│   │   ├── roles/                     # Ma trận phân quyền (chỉ admin)
+│   │   └── profile/                   # Hồ sơ của tôi (mở từ menu avatar)
+│   ├── shared/components/
+│   │   ├── header/  sidebar/  loading-spinner/
+│   │   ├── confirm-dialog/  action-menu/  search-input/  add-button/
+│   │   └── seat-map/                  # Sơ đồ ghế xe + seat-layout.ts
+│   ├── app.config.ts                  # Root providers: HttpClient, Toastr, Router
+│   └── app.routes.ts                  # Route tree (layout-based)
+└── styles.css                         # Global dark theme + Inter font + Toastr override
 ```
 
 ---
 
 ## Environment / Config
 
-Không dùng `.env`. Cấu hình nằm trong `src/environments/environment.ts`:
+Không dùng `.env` và **không đọc biến môi trường lúc chạy** — URL API được build sẵn vào bundle:
 
-```typescript
-export const environment = {
-  production: false,
-  apiUrl: 'http://localhost:5000/api/v1',
-};
-```
+| File | Dùng khi | `apiUrl` |
+|---|---|---|
+| `environment.ts` | `npm start`, `ng build --configuration development` | `http://localhost:5000/api/v1` |
+| `environment.production.ts` | `npm run build` (mặc định production) | URL Render của backend |
+
+Đổi URL backend production = sửa `environment.production.ts` rồi push (Netlify tự build lại). Thêm biến môi trường trên Netlify **không có tác dụng**.
 
 ---
 
 ## Route Structure (Layout-based)
 
-Route được tổ chức theo layout shell — tất cả trang protected đều là **children** của `MainLayoutComponent`:
+Mọi trang cần đăng nhập là **children** của `MainLayoutComponent` (parent đã có `authGuard`):
 
 ```typescript
 // app.routes.ts
-export const routes: Routes = [
-  { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+const requires = (resource: string, action = 'read') => ({
+  canActivate: [permissionGuard],
+  data: { permission: { resource, action } },
+});
 
-  // Standalone — không cần auth, không có sidebar
-  { path: 'login', loadComponent: () => import('./features/auth/login/...') },
-
-  // Protected — bọc trong MainLayoutComponent (sidebar + header)
-  {
-    path: '',
-    loadComponent: () => import('./features/main-layout/main-layout.component')
-      .then(m => m.MainLayoutComponent),
-    canActivate: [authGuard],
-    children: [
-      { path: 'dashboard', loadComponent: () => import('./features/dashboard/...') },
-      { path: 'vehicles',  loadComponent: () => import('./features/vehicles/...') },
-      // Thêm module mới vào đây
-    ],
-  },
-
-  { path: '**', redirectTo: 'dashboard' },
-];
+children: [
+  { path: 'dashboard', loadComponent: ... },                         // ai cũng vào được
+  { path: 'drivers',   loadComponent: ..., ...requires('drivers') }, // cần drivers:read
+  { path: 'itineraries', loadComponent: ..., ...requires('bookings') }, // dùng quyền bookings như BE
+  { path: 'profile',   loadComponent: ... },                         // ai cũng vào được
+  { path: 'roles',     loadComponent: ..., canActivate: [permissionGuard], data: { adminOnly: true } },
+]
 ```
 
-> **Khi thêm page mới**: thêm vào `children[]` của layout, **KHÔNG** thêm `canActivate: [authGuard]` ở route con vì parent đã guard rồi.
+> **KHÔNG** thêm `authGuard` ở route con. Trang nghiệp vụ mới **phải** có `...requires(...)` — xem [Phân quyền](#phân-quyền-rbac).
 
 ---
 
 ## Authentication Flow
 
-1. User vào `/` → redirect `/dashboard` → `authGuard` kiểm tra
-2. `authGuard` check `isPlatformBrowser` (tránh SSR context)
-3. Check `auth.isAuthenticated()` → nếu true, pass
-4. Fallback: check `tokenStorage.getToken()` trực tiếp → nếu có token, pass
-5. Không có token → redirect `/login`
-6. Login form → `AuthService.login()` → `POST /auth/login`
-7. Token + user lưu vào Cookie qua `TokenStorageService`
-8. `MainLayoutComponent.ngOnInit()` → `authService.tryLoadUser()` (phòng trường hợp user cookie mất)
-9. `auth.interceptor.ts` tự gắn `Authorization: Bearer <token>` vào mọi request
-10. 401 → tự gọi `POST /auth/refresh-token` → retry request gốc
-11. Refresh thất bại → clear cookie → redirect `/login`
+1. `authGuard`: có token (signal hoặc cookie) → cho qua; không có → `/login`
+2. Login → `POST /auth/login` → lưu `token`, `refreshToken`, `user` vào cookie (`TokenStorageService`)
+3. Điều hướng sau login do `effect` trong `LoginComponent` lo (khi `isAuthenticated()` thành `true`) — **không** thêm `navigate` thứ hai trong `onSubmit`
+4. `MainLayoutComponent.ngOnInit()` → `authService.refreshUser()`: luôn gọi lại `GET /auth/me` để nhận quyền mới nhất (admin đổi quyền → user chỉ cần F5)
+5. `auth.interceptor.ts` gắn `Authorization: Bearer <token>`; gặp **401** → `POST /auth/refresh-token` → retry
+6. Refresh thất bại → xóa cookie → `/login`
+
+### ⚠️ Gotchas về token / cookie
+
+- **Refresh token được xoay vòng**: mỗi lần refresh, BE trả `{ token, refreshToken }` mới và **hủy refresh token cũ** → phải lưu cả hai (`refreshAccessToken()`). Quên lưu refresh token mới = user bị đá ra sau ~2 giờ.
+- **Logout phải gửi `{ refreshToken }`** của thiết bị hiện tại. Body rỗng → BE xóa refresh token của **mọi thiết bị**.
+- **Cookie tối đa ~4KB**: user đầy đủ của admin (~8KB) bị trình duyệt bỏ qua âm thầm. `TokenStorageService.setUser()` chỉ lưu bản gọn (permission chỉ còn `resource` + `action`). **Không** nhét thêm dữ liệu lớn vào cookie.
+- **Mọi lỗi 401 đều bị interceptor hiểu là hết phiên** → BE trả **400** cho lỗi nghiệp vụ (vd. sai mật khẩu hiện tại khi đổi mật khẩu).
+- Không dùng `APP_INITIALIZER` để gọi `checkAuth()` (xóa cookie nếu API lỗi). Dùng `refreshUser()` / `tryLoadUser()` (lỗi thì giữ nguyên user cũ).
+- Không đọc `document` / `localStorage` / `window` trong service mà không check `isPlatformBrowser` (code vẫn còn file SSR `app.routes.server.ts`, `server.ts` dù build hiện tại không bật SSR).
 
 ---
 
-## ⚠️ SSR Gotchas — ĐỌC KỸ
+## Phân quyền (RBAC)
 
-Dự án dùng Angular Universal (SSR) nhưng **tất cả routes dùng `RenderMode.Client`**. Không được thay đổi điều này.
+Quyền có dạng `resource:action` (vd. `drivers:read`, `trips:update`), gắn vào **role**. FE ẩn/hiện theo **đúng** quyền mà BE kiểm tra (`checkPermission(resource, action)`); BE vẫn là nơi chặn thật.
+
+| Công cụ | Dùng ở đâu |
+|---|---|
+| `auth.can(resource, action)` | Mọi chỗ cần kiểm tra quyền. **Admin luôn `true`** (giống BE bỏ qua kiểm tra với admin) |
+| `auth.isAdmin()` | Trang/endpoint BE dùng `authorize('admin')` (users, roles, permissions) — không dựa vào permission |
+| `permissionGuard` + `data.permission` / `data.adminOnly` | Chặn gõ URL trực tiếp → về `/dashboard` + toast |
+| `NavItem.permission` / `NavItem.adminOnly` | Ẩn mục sidebar (`visibleNavItems`) |
+| `allowCreate/allowUpdate/allowDelete` (computed trong component) | Ẩn nút Thêm, mục Sửa/Xóa trong action menu, nút trong modal |
+
+Pattern trong feature component:
 
 ```typescript
-// app.routes.server.ts — KHÔNG đổi sang Prerender
-export const serverRoutes: ServerRoute[] = [
-  { path: '**', renderMode: RenderMode.Client }
-];
+private auth = inject(AuthService);
+
+// Hide actions the backend would reject with 403
+readonly allowCreate = computed(() => this.auth.can('drivers', 'create'));
+readonly allowUpdate = computed(() => this.auth.can('drivers', 'update'));
+readonly allowDelete = computed(() => this.auth.can('drivers', 'delete'));
+
+getActions(d: Driver): MenuAction[] {
+  return [
+    { label: 'Xem chi tiết', iconPaths: this.EYE, action: () => this.openViewModal(d) },
+    ...(this.allowUpdate() ? [{ label: 'Chỉnh sửa', iconPaths: this.EDIT, color: 'warning' as const, action: () => this.openEditModal(d) }] : []),
+  ];
+}
 ```
 
-**Tại sao**: Cookie (`ngx-cookie-service`) không đọc được server-side → nếu dùng `Prerender`, guard sẽ redirect về `/login` trên server và user bị đăng xuất mỗi khi F5.
+```html
+@if (allowCreate()) {
+  <app-add-button buttonId="add-driver-btn" label="Thêm Tài Xế" (clicked)="openCreateModal()" />
+}
+```
 
-**Tuyệt đối không**:
-- ❌ Không dùng `provideClientHydration()` (đã bị bỏ)
-- ❌ Không dùng `APP_INITIALIZER` để gọi `checkAuth()` (destructive — xóa cookie nếu API fail)
-- ❌ Không đọc `document`, `localStorage`, `window` trực tiếp trong service mà không check `isPlatformBrowser`
+Lưu ý:
+- **Không gọi API mà user không có quyền** chỉ để đổ dropdown — sẽ ra toast lỗi 403. Vd. trang Chuyến đi chỉ tải tuyến/xe/tài xế khi `allowCreate() || allowUpdate()`.
+- Thêm nhãn cho quyền mới trong `core/constants/permissions.ts` (dùng chung cho trang Phân quyền và Hồ sơ).
+- Trang **Phân quyền** (`/roles`, admin) sửa quyền của role qua `PUT /roles/:id`. Role chỉ có 4 giá trị cố định (`admin, manager, staff, user` — enum ở BE), không tạo/xóa role mới được.
 
 ---
 
@@ -156,29 +166,18 @@ export const serverRoutes: ServerRoute[] = [
 
 **TOÀN BỘ thông báo tới user phải dùng `ToastrService`. KHÔNG dùng `alert()`, `confirm()`, `console.log()` cho user feedback.**
 
-### Inject
-
-```typescript
-import { ToastrService } from 'ngx-toastr';
-
-export class MyComponent {
-  private toastr = inject(ToastrService);
-}
-```
-
-### Khi nào dùng loại nào
-
 | Method | Tiêu đề gợi ý | Khi nào dùng |
 |--------|--------------|--------------|
 | `toastr.success(msg, title)` | `'Thành công'` | Tạo/sửa/xóa thành công, login thành công |
 | `toastr.error(msg, title)` | `'Lỗi'` | API fail, validation fail, network error |
-| `toastr.warning(msg, title)` | `'Cảnh báo'` | Thao tác không được khuyến khích, sắp hết phiên |
+| `toastr.warning(msg, title)` | `'Cảnh báo'` | Thao tác không được khuyến khích, thiếu quyền |
 | `toastr.info(msg, title)` | `'Thông báo'` | Logout, thông tin trung tính |
 
-### Pattern chuẩn trong feature component
+### Pattern chuẩn
+
+BE trả lỗi dạng `{ success: false, error: "..." }` → message nằm ở **`err.error.error`** (không phải `err.error.message`):
 
 ```typescript
-// ✅ ĐÚNG
 async onSubmit(): Promise<void> {
   try {
     await this.myService.create(payload);
@@ -186,74 +185,34 @@ async onSubmit(): Promise<void> {
     this.closeModal();
     await this.loadData();
   } catch (err: any) {
-    const msg = err?.error?.message ?? 'Có lỗi xảy ra';
-    this.toastr.error(msg, 'Lỗi');
-  }
-}
-
-async onDelete(): Promise<void> {
-  try {
-    await this.myService.delete(id);
-    this.toastr.success('Đã xóa', 'Thành công');
-  } catch (err: any) {
-    this.toastr.error(err?.error?.message ?? 'Không thể xóa', 'Lỗi');
+    this.toastr.error(err?.error?.error ?? err?.message ?? 'Có lỗi xảy ra', 'Lỗi');
   }
 }
 ```
 
-### Cấu hình hiện tại (`app.config.ts`)
-
-```typescript
-ToastrModule.forRoot({
-  positionClass: 'toast-top-right',
-  timeOut: 3000,
-  closeButton: true,
-  progressBar: true,
-  preventDuplicates: true,
-})
-```
-
-### Custom styles (`styles.css`)
-
-Đã override với dark theme. 4 loại toast: `toast-success`, `toast-error`, `toast-info`, `toast-warning`.
-**Không cần thêm style ở component level.**
+Toast dùng dark theme override trong `styles.css` — không cần style ở component.
 
 ---
 
 ## Patterns & Conventions
 
-### State Management — Angular Signals
+### State — Angular Signals
 
 ```typescript
-// Trong service, KHÔNG dùng Subject/BehaviorSubject cho state đơn giản
 private _items = signal<Item[]>([]);
-private _isLoading = signal(false);
-
-items = this._items.asReadonly();          // expose read-only
-isLoading = this._isLoading.asReadonly();
+items = this._items.asReadonly();
 isEmpty = computed(() => this._items().length === 0);
 ```
 
 ### HTTP calls
 
 ```typescript
-// Dùng firstValueFrom() để convert Observable → Promise trong async methods
-const result = await firstValueFrom(this.http.get<T>(url));
-
-// Với query params
-let params = new HttpParams();
-if (filter.search) params = params.set('search', filter.search);
 const result = await firstValueFrom(this.http.get<T>(url, { params }));
 ```
 
-### Inject pattern (Angular 21)
+### Inject (Angular 21)
 
-```typescript
-// Ưu tiên dùng inject() function thay vì constructor injection
-private myService = inject(MyService);
-private toastr = inject(ToastrService);
-private router = inject(Router);
-```
+Ưu tiên `inject()` thay vì constructor injection.
 
 ### Component — Standalone + Lazy Loading
 
@@ -261,7 +220,7 @@ private router = inject(Router);
 @Component({
   selector: 'app-my-feature',
   standalone: true,        // BẮT BUỘC
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './my-feature.component.html',
   styleUrl: './my-feature.component.css',
 })
@@ -269,331 +228,127 @@ private router = inject(Router);
 
 ### CSS — Component-scoped
 
-- Mỗi component có file `.css` riêng (scoped)
-- Global styles chỉ ở `src/styles.css`
+- Mỗi component có file `.css` riêng; global chỉ ở `src/styles.css`
 - Dark theme: bg `#0a0f1e`, text `#f1f5f9`, accent `#3b82f6`
+- Trang dạng bảng + modal có thể **dùng lại** CSS của Bookings thay vì copy: `styleUrls: ['../bookings/bookings.component.css', './my-feature.component.css']` (itineraries, roles, profile đang làm vậy) — file riêng chỉ chứa phần khác biệt
 - **KHÔNG** dùng inline style ngoài `[style.xxx]` binding
+- Layout shell (`main-layout`) cố định theo chiều cao màn hình; chỉ `.shell-content` cuộn → `position: sticky` trong trang bám theo vùng nội dung, không theo `window`
 
 ---
 
 ## Thêm Module Mới — Checklist
 
-### Bước 1: Model
-
-Tạo `src/app/core/models/ten-entity.model.ts`:
-```typescript
-export interface TenEntity { _id: string; /* ... */ }
-export interface TenEntityCreatePayload { /* required fields */ }
-export interface TenEntityUpdatePayload { /* optional fields */ }
-export interface TenEntityListResponse {
-  success: boolean; count: number; total: number;
-  totalPages: number; currentPage: number; data: TenEntity[];
-}
-```
-
-### Bước 2: Service
-
-Tạo `src/app/core/services/ten-entity.service.ts`:
-```typescript
-@Injectable({ providedIn: 'root' })
-export class TenEntityService {
-  private http = inject(HttpClient);
-  private readonly apiUrl = `${environment.apiUrl}/ten-endpoint`;
-
-  async getAll(params = {}): Promise<TenEntityListResponse> {
-    return firstValueFrom(this.http.get<TenEntityListResponse>(this.apiUrl, { params }));
-  }
-  async create(payload: TenEntityCreatePayload) { ... }
-  async update(id: string, payload: TenEntityUpdatePayload) { ... }
-  async delete(id: string) { ... }
-}
-```
-
-> Token được tự động gắn bởi `auth.interceptor.ts` — không cần thêm header thủ công.
-
-### Bước 3: Component
-
-Tạo `src/app/features/ten-entity/`:
-- `ten-entity.component.ts` — `standalone: true`, inject service + ToastrService
-- `ten-entity.component.html` — table + modal + delete confirm
-- `ten-entity.component.css` — copy pattern từ `vehicles.component.css`
-
-### Bước 4: Route
-
-Thêm vào `app.routes.ts` trong `children[]` của layout:
-```typescript
-{
-  path: 'ten-entity',
-  loadComponent: () => import('./features/ten-entity/ten-entity.component')
-    .then(m => m.TenEntityComponent),
-}
-```
-
-### Bước 5: Sidebar
-
-Thêm nav item vào `sidebar.component.ts`:
-```typescript
-navItems: NavItem[] = [
-  // ...existing items
-  { label: 'Tên module', route: '/ten-entity', icon: 'ten-icon' },
-];
-```
-
-Thêm `@case ('ten-icon')` với SVG tương ứng vào `sidebar.component.html`.
+1. **Model** — `core/models/ten-entity.model.ts` (entity, create/update payload, list response)
+2. **Service** — `core/services/ten-entity.service.ts` (`inject(HttpClient)`, `firstValueFrom`; token tự gắn bởi interceptor)
+3. **Component** — `features/ten-entity/` (`standalone: true`, table + modal + `ConfirmDialogComponent` khi xóa)
+4. **Route** — thêm vào `children[]` trong `app.routes.ts`
+5. **Sidebar** — thêm `NavItem` trong `sidebar.component.ts` + `@case ('icon')` SVG trong `sidebar.component.html`; thêm tiêu đề trong `pageTitle` của `header.component.ts`
+6. **Phân quyền** ← **đừng quên**
+   - Route: `...requires('ten-resource')` (hoặc `data: { adminOnly: true }`)
+   - Sidebar: `permission: { resource: 'ten-resource', action: 'read' }`
+   - Component: `allowCreate/allowUpdate/allowDelete` để ẩn nút
+   - BE: route phải có `checkPermission('ten-resource', ...)` và permission phải được seed (`be/src/config/seedRolesPermissions.js`)
+   - Nhãn tiếng Việt: `core/constants/permissions.ts`
 
 ---
 
 ## Shared Components
 
-### `<app-header>`
-- Topbar: breadcrumb nhỏ bên trái + user dropdown bên phải
-- Import: `HeaderComponent` từ `shared/components/header/`
-
-### `<app-sidebar>`
-- Sidebar collapsible (click nút mũi tên để thu gọn)
-- Tự highlight active route
-- Import: `SidebarComponent` từ `shared/components/sidebar/`
-
-### `<app-loading-spinner>`
-- Spinner overlay toàn màn hình
-- Import: `LoadingSpinnerComponent` từ `shared/components/loading-spinner/`
+### `<app-header>` / `<app-sidebar>` / `<app-loading-spinner>`
+- Header: tiêu đề trang (theo URL) bên trái, menu avatar bên phải (**Hồ sơ của tôi**, **Đăng xuất**)
+- Sidebar: collapsible, tự highlight route, chỉ hiện mục user có quyền
 
 ### `<app-confirm-dialog>` ← **DÙNG CHO MỌI XÁC NHẬN XÓA**
 
-> **Quy tắc**: Mọi thao tác xóa phải có confirm dialog. Dùng `ConfirmDialogComponent` dùng chung — **KHÔNG tự viết inline dialog**.
-
-**File**: `shared/components/confirm-dialog/confirm-dialog.component.ts`
-
-**API:**
-
 | Input | Type | Default | Mô tả |
 |-------|------|---------|-------|
-| `isOpen` | `boolean` | `false` | Hiện/ẩn dialog |
+| `isOpen` | `boolean` | `false` | Hiện/ẩn |
 | `title` | `string` | `'Xác nhận xóa'` | Tiêu đề |
-| `message` | `string` | — | Nội dung (hỗ trợ HTML `<strong>`) |
-| `confirmLabel` | `string` | `'Xóa'` | Label nút xác nhận |
-| `cancelLabel` | `string` | `'Hủy'` | Label nút hủy |
-| `isLoading` | `boolean` | `false` | Hiện spinner, disable cả 2 nút |
+| `message` | `string` | — | Nội dung (hỗ trợ `<strong>`) |
+| `confirmLabel` / `cancelLabel` | `string` | `'Xóa'` / `'Hủy'` | Label nút |
+| `isLoading` | `boolean` | `false` | Spinner, disable 2 nút |
 
-| Output | Mô tả |
-|--------|-------|
-| `confirmed` | User nhấn nút xác nhận |
-| `cancelled` | User nhấn Hủy hoặc backdrop |
-
-**Usage pattern:**
-
-```typescript
-// component.ts
-import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
-
-@Component({
-  imports: [..., ConfirmDialogComponent],
-})
-export class MyComponent {
-  deleteConfirmOpen = signal(false);
-  itemToDelete = signal<MyItem | null>(null);
-  isDeleting = signal<string | null>(null);
-
-  confirmDelete(item: MyItem): void {
-    this.itemToDelete.set(item);
-    this.deleteConfirmOpen.set(true);
-  }
-
-  cancelDelete(): void {
-    this.deleteConfirmOpen.set(false);
-    this.itemToDelete.set(null);
-  }
-
-  async executeDelete(): Promise<void> {
-    const item = this.itemToDelete();
-    if (!item) return;
-    this.isDeleting.set(item._id);
-    try {
-      await this.myService.delete(item._id);
-      this.toastr.success('Đã xóa', 'Thành công');
-      this.cancelDelete();
-      await this.loadData();
-    } catch (err: any) {
-      this.toastr.error(err?.error?.message ?? 'Không thể xóa', 'Lỗi');
-    } finally {
-      this.isDeleting.set(null);
-    }
-  }
-}
-```
+Outputs: `confirmed`, `cancelled`.
 
 ```html
-<!-- component.html -->
 <app-confirm-dialog
   [isOpen]="deleteConfirmOpen()"
-  [title]="'Xóa item?'"
-  [message]="itemToDelete()
-    ? 'Bạn có chắc muốn xóa <strong>' + itemToDelete()!.name + '</strong>?<br/>Không thể hoàn tác.'
-    : ''"
-  confirmLabel="Xóa"
+  title="Xóa item?"
+  [message]="itemToDelete() ? 'Xóa <strong>' + itemToDelete()!.name + '</strong>?' : ''"
   [isLoading]="!!isDeleting()"
   (confirmed)="executeDelete()"
   (cancelled)="cancelDelete()"
 />
 ```
 
----
-
-## CORS
-
-Backend (BE) phải cho phép origin `http://localhost:4200`. Kiểm tra `be/.env`:
-
-```
-CORS_ORIGIN=http://localhost:3000,http://localhost:4200
-```
-
-Nếu thêm port mới, cập nhật `CORS_ORIGIN` và **restart BE**.
-
----
-
-## Shared UI Components
-
 ### `SearchInputComponent` — `shared/components/search-input/`
 
-Thanh tìm kiếm dùng chung cho tất cả các trang. **Bắt buộc sử dụng thay vì viết inline search box**.
-
-**API:**
-| Input/Output | Kiểu | Mô tả |
-|---|---|---|
-| `@Input() placeholder` | `string` | Placeholder text |
-| `@Input() value` | `string` | Giá trị hiện tại (bind từ signal) |
-| `@Input() inputId` | `string` | ID của `<input>` để label/test targeting |
-| `@Output() search` | `EventEmitter<string>` | Emit khi user gõ hoặc bấm nút xóa |
-
-**Cách dùng:**
-```html
-<app-search-input
-  inputId="vehicle-search"
-  placeholder="Tìm theo biển số..."
-  [value]="searchQuery()"
-  (search)="onSearch($event)"
-/>
-```
-
-**Lưu ý:**
-- Search của **Vehicles / Drivers / Routes** gọi API (server-side, có debounce qua `loadXxx()`).
-- Search của **Trips** là **client-side filter** vì backend `/trips` không có param `search`. Dùng `computed(() => trips().filter(...))` và render `filteredTrips()` thay vì `trips()` trong template.
-- Component tự bao gồm nút "×" để xóa query, không cần xử lý thêm ở parent.
-
----
+Bắt buộc dùng thay vì tự viết ô tìm kiếm. Inputs: `placeholder`, `value`, `inputId`; output: `search`.
+- Vehicles / Drivers / Routes / Bookings / Itineraries: search **server-side**
+- Trips: **client-side** (`/trips` không có param `search`) → render `filteredTrips()`
 
 ### `ActionMenuComponent` — `shared/components/action-menu/`
 
-Menu ba chấm (⋮) dùng chung cho cột "Thao Tác" trong bảng. **Bắt buộc sử dụng thay vì render nhiều icon button riêng lẻ**.
+Menu ⋮ cho cột "Thao Tác". Input: `actions: MenuAction[]`.
 
-**API:**
-| Input | Kiểu | Mô tả |
-|---|---|---|
-| `@Input() actions` | `MenuAction[]` | Danh sách action items |
-
-**Interface `MenuAction`:**
 ```typescript
 export interface MenuAction {
   label: string;
-  iconPaths: string[];   // SVG <path d="..."> — hỗ trợ nhiều path (eye = 2 paths)
+  iconPaths: string[];   // SVG path(s)
   color?: 'default' | 'warning' | 'danger' | 'success' | 'info';
   disabled?: boolean;
   action: () => void;
 }
 ```
 
-**Cách dùng:**
-```typescript
-// Trong component TS — khai báo icon paths là readonly class fields
-readonly EYE   = ['M2.036 12.322...', 'M15 12a3 3 0 11-6 0 3 3 0 016 0z'];
-readonly EDIT  = ['M16.862 4.487...'];
-readonly TRASH = ['M14.74 9l-.346 9...'];
-
-getActions(item: MyModel): MenuAction[] {
-  const all: MenuAction[] = [   // ← BẮT BUỘC type rõ ràng để tránh TS2322
-    { label: 'Xem chi tiết', iconPaths: this.EYE,   action: () => this.openView(item) },
-    { label: 'Chỉnh sửa',   iconPaths: this.EDIT,  color: 'warning', action: () => this.openEdit(item) },
-    { label: 'Xóa',         iconPaths: this.TRASH, color: 'danger',  action: () => this.confirmDelete(item) },
-  ];
-  return all; // hoặc all.filter(...) nếu cần ẩn item theo điều kiện
-}
-```
-
-```html
-<!-- Trong template -->
-<td style="text-align:right; padding-right:.75rem">
-  <app-action-menu [actions]="getActions(item)" />
-</td>
-```
-
-> ⚠️ **TS2322 Gotcha**: Khi dùng `.filter()` trên array literal, TypeScript widening `color` thành `string`. Fix bằng cách khai báo `const all: MenuAction[] = [...]` trước khi `.filter()`.
-
----
+> ⚠️ **TS2322**: khi lọc/spread array literal, `color` bị widen thành `string` → khai báo `const all: MenuAction[] = [...]` hoặc dùng `'warning' as const`.
 
 ### `AddButtonComponent` — `shared/components/add-button/`
 
-Nút thêm mới (gradient xanh, icon +) dùng chung ở header của mọi trang. **Bắt buộc sử dụng thay vì viết inline button**.
+Nút thêm mới ở header trang. Inputs: `label`, `buttonId`; output: `clicked`. Bọc trong `@if (allowCreate())`.
 
-**API:**
+### `<app-seat-map>` — `shared/components/seat-map/`
+
+Sơ đồ ghế theo bố cục xe thật, dùng cho form Đặt vé và từng chặng của form Hành trình.
+
 | Input/Output | Kiểu | Mô tả |
 |---|---|---|
-| `@Input() label` | `string` | Text hiển thị trong button (default: `'Thêm mới'`) |
-| `@Input() buttonId` | `string` | `id` attribute của button (dùng cho e2e test) |
-| `@Output() clicked` | `EventEmitter<void>` | Emit khi click |
+| `seats` | `Seat[]` | **Tất cả** ghế của chuyến (mọi status) — gọi `getSeatMap(tripId)` **không** truyền `'available'` |
+| `selectedId` | `string` | Ghế đang chọn |
+| `fare` | `number?` | Giá hiển thị ở dòng tóm tắt |
+| `selectedIdChange` | `string` | Emit id ghế; `''` khi bỏ chọn |
 
-**Cách dùng:**
-```html
-<app-add-button
-  buttonId="add-vehicle-btn"
-  label="Thêm xe mới"
-  (clicked)="openCreate()"
-/>
-```
-
-**Lưu ý:**
-- Style gradient (`#3b82f6 → #6366f1`) được đóng gói trong component, không phụ thuộc vào CSS của trang cha.
-- Đặt bên trong `<div class="page-header">` cạnh khối tiêu đề trang (`.page-title` / `.page-subtitle`).
+- Chỉ ghế `available` bấm được; ghế `reserved` / `booked` / `unavailable` hiển thị nhưng bị khóa
+- Bố cục suy ra từ số ghế (seatNumber lớn nhất = sức chứa): ≤ 16 ghế `1 | lối đi | 2`, còn lại `2 | lối đi | 2`, ghế lẻ cuối nhập vào hàng cuối
+- ⚠️ `seat-layout.ts` **phải giữ đồng bộ** với `be/src/utils/seatLayout.js` (BE dùng để gán loại ghế `priority/window/aisle` theo vị trí)
 
 ---
 
-## Module: Bookings & Seats
-
-### Files
-
-| File | Mục đích |
-|---|---|
-| `core/models/booking.model.ts` | Booking, BookingPassenger, BookingCreatePayload, BookingCancelPayload |
-| `core/models/seat.model.ts` | Seat, SeatAvailability, SeatStatus, SeatType |
-| `core/services/booking.service.ts` | CRUD + confirm/cancel lifecycle |
-| `core/services/seat.service.ts` | getSeatMap, getAvailability, initializeSeats, updateStatus |
-| `features/bookings/bookings.component.ts` | Full component với Signals state |
-| `features/bookings/bookings.component.html` | Table + create modal + view modal + cancel dialog |
-| `features/bookings/bookings.component.css` | Dark theme + seat grid picker |
-
-### API Endpoints (Backend `/api/v1`)
+## Module: Bookings, Seats & Itineraries
 
 | Method | Path | Mô tả |
 |---|---|---|
-| `POST` | `/bookings` | Tạo booking (seat → reserved) |
-| `GET` | `/bookings` | Danh sách, filter: `tripId`, `status`, `search`, pagination |
-| `GET` | `/bookings/:id` | Chi tiết booking (populated) |
-| `PATCH` | `/bookings/:id/confirm` | Xác nhận booking (seat → booked) |
-| `PATCH` | `/bookings/:id/cancel` | Hủy booking (seat → available), body: `{ reason }` |
-| `DELETE` | `/bookings/:id` | Xóa booking (Admin only) |
-| `GET` | `/seats/availability?tripId=` | Tóm tắt khả dụng ghế (public) |
-| `GET` | `/seats?tripId=&status=` | Sơ đồ ghế đầy đủ (auth) |
-| `POST` | `/seats/initialize` | Khởi tạo ghế cho chuyến (Manager) |
-| `PATCH` | `/seats/:id` | Cập nhật trạng thái ghế (chỉ `available`/`unavailable`) |
+| `POST` | `/bookings` | Tạo booking 1 chuyến (seat → `reserved`) |
+| `GET` | `/bookings` | Danh sách; filter `tripId`, `status`, `search` |
+| `PATCH` | `/bookings/:id/confirm` · `/cancel` | Xác nhận (seat → `booked`) · Hủy (seat → `available`) |
+| `DELETE` | `/bookings/:id` | Chỉ booking `cancelled` |
+| `POST` | `/itineraries` | Hành trình ≥ 2 chặng, giữ ghế mọi chặng trong 1 transaction |
+| `GET` | `/itineraries/:id` | Kèm `connections[]` + `atRisk` (tính lại theo giờ trễ hiện tại) |
+| `PATCH` | `/itineraries/:id/confirm` · `/cancel` | Áp dụng cho **tất cả** chặng |
+| `GET` | `/seats?tripId=` | Sơ đồ ghế (mọi status) |
+| `POST` | `/seats/initialize` | Khởi tạo ghế cho chuyến mới (type theo vị trí) |
 
-### Business Logic
+- Booking thuộc hành trình (`booking.itinerary`) **không** được confirm/cancel/xóa lẻ qua `/bookings` (BE trả 400) → FE ẩn các nút đó, gắn nhãn "Hành trình"
+- Form hành trình lọc sẵn chuyến cho chặng sau: xuất phát đúng điểm đến chặng trước, sau ≥ 30 phút (`MIN_TRANSFER_MINUTES` — hằng số trong `itineraries.component.ts` phải khớp BE)
 
-- **Booking lifecycle**: `pending` → `confirmed` (Xác nhận) | `pending/confirmed` → `cancelled` (Hủy)
-- **Seat lifecycle**: khi booking pending → seat `reserved`; confirmed → `booked`; cancelled → `available`
-- **Seat picker**: Khi chọn chuyến đi trong modal tạo, component gọi `getSeatMap(tripId, 'available')` để hiển thị grid ghế trống. Ghế được chọn highlight bằng class `selected`.
-- **Chỉ xóa được booking ở trạng thái `cancelled`**
-- **Search server-side**: Bookings hỗ trợ `search` param (tìm theo `passenger.name` hoặc `passenger.phone`)
+---
 
-### Design Notes
-- Seat grid picker hiển thị ghế có màu theo type: `standard` (mặc định), `window` (xanh), `aisle` (tím), `priority` (vàng)
-- Status banner trong view modal đổi màu theo trạng thái booking
-- Sử dụng đầy đủ shared components: `AddButtonComponent`, `SearchInputComponent`, `ActionMenuComponent`, `ConfirmDialogComponent`
+## Deploy
+
+- **Frontend**: Netlify, cấu hình ở `../netlify.toml` (base `fe`, `npm run build`, publish `dist/bus-management/browser`, Node 22, SPA redirect `/* → /index.html`). Push lên `main` → Netlify tự build (~30s).
+- **Backend**: Render — URL nằm trong `environment.production.ts`. BE phải có `CORS_ORIGIN` chứa domain Netlify.
+- Gói free của Render "ngủ" sau 15 phút → request đầu tiên mất ~50s. Mở trang trước khi demo.
+
+### CORS khi dev
+
+`be/.env` phải cho phép `http://localhost:4200` (`CORS_ORIGIN`, nhiều origin cách nhau bằng dấu phẩy). Sửa xong phải restart BE.

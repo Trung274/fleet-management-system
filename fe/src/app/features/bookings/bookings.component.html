@@ -181,22 +181,15 @@
 
             @if (form().tripId) {
               <div class="form-group">
-                <label class="form-label">Ghế trống <span class="required">*</span></label>
+                <label class="form-label">Chọn ghế <span class="required">*</span></label>
                 @if (seats().length === 0) {
-                  <p class="hint-text">Không có ghế trống cho chuyến này</p>
+                  <p class="hint-text">Chuyến này chưa được khởi tạo ghế</p>
                 } @else {
-                  <div class="seat-grid">
-                    @for (seat of seats(); track seat._id) {
-                      <button type="button"
-                        class="seat-tile"
-                        [class.selected]="form().seatId === seat._id"
-                        [class]="'seat-tile seat-type-' + seat.type"
-                        (click)="form.update(f => ({ ...f, seatId: seat._id }))">
-                        <span class="seat-num">{{ seat.seatNumber }}</span>
-                        <span class="seat-lbl">{{ seat.type }}</span>
-                      </button>
-                    }
-                  </div>
+                  <app-seat-map
+                    [seats]="seats()"
+                    [selectedId]="form().seatId"
+                    [fare]="form().fare ?? selectedTripFare()"
+                    (selectedIdChange)="form.update(f => ({ ...f, seatId: $event }))" />
                 }
               </div>
             }

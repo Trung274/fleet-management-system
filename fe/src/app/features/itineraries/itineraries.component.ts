@@ -17,6 +17,7 @@ import { Trip } from '../../core/models/trip.model';
 import { ActionMenuComponent, MenuAction } from '../../shared/components/action-menu/action-menu.component';
 import { SearchInputComponent } from '../../shared/components/search-input/search-input.component';
 import { AddButtonComponent } from '../../shared/components/add-button/add-button.component';
+import { SeatMapComponent } from '../../shared/components/seat-map/seat-map.component';
 
 // Must match MIN_TRANSFER_MINUTES on the backend (default 30)
 const MIN_TRANSFER_MINUTES = 30;
@@ -36,7 +37,7 @@ const emptyLeg = (): LegForm => ({ tripId: '', seatId: '', fare: undefined, seat
   standalone: true,
   imports: [
     CommonModule, FormsModule,
-    ActionMenuComponent, SearchInputComponent, AddButtonComponent,
+    ActionMenuComponent, SearchInputComponent, AddButtonComponent, SeatMapComponent,
   ],
   templateUrl: './itineraries.component.html',
   styleUrls: ['../bookings/bookings.component.css', './itineraries.component.css'],
@@ -89,6 +90,10 @@ export class ItinerariesComponent implements OnInit {
   );
 
   private tripMap = computed(() => new Map(this.trips().map(t => [t._id, t])));
+
+  tripFare(tripId: string): number | undefined {
+    return this.tripMap().get(tripId)?.fare;
+  }
 
   estimatedTotal = computed(() =>
     this.legs().reduce((sum, leg) => {
@@ -214,7 +219,8 @@ export class ItinerariesComponent implements OnInit {
     if (!tripId) return;
 
     try {
-      const res = await this.seatService.getSeatMap(tripId, 'available');
+      // All seats, so the map can show taken ones too
+      const res = await this.seatService.getSeatMap(tripId);
       this.legs.update(legs => legs.map((leg, i) =>
         i === index && leg.tripId === tripId ? { ...leg, seats: res.data } : leg
       ));

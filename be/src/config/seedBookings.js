@@ -6,6 +6,7 @@ const Booking = require('../models/Booking.model');
 const Itinerary = require('../models/Itinerary.model');
 require('../models/Vehicle.model');
 require('../models/Route.model');
+const { seatTypesForCapacity } = require('../utils/seatLayout');
 
 // Sample multi-trip itineraries, keyed by the route code of their second leg
 const ITINERARY_SAMPLES = {
@@ -57,13 +58,14 @@ const seedBookings = async () => {
 
     for (const trip of bookableTrips) {
       const capacity = trip.vehicle.capacity;
+      const types = seatTypesForCapacity(capacity);
       const seats = [];
       for (let i = 1; i <= capacity; i++) {
         seats.push({
           trip: trip._id,
           vehicle: trip.vehicle._id,
           seatNumber: i,
-          type: i <= 2 ? 'priority' : i % 5 === 0 ? 'window' : 'standard',
+          type: types[i - 1],
           status: 'available'
         });
       }

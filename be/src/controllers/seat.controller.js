@@ -2,6 +2,7 @@ const Seat = require('../models/Seat.model');
 const Trip = require('../models/Trip.model');
 const asyncHandler = require('../utils/asyncHandler');
 const ErrorResponse = require('../utils/errorResponse');
+const { seatTypesForCapacity } = require('../utils/seatLayout');
 
 // @desc    Initialize seats for a trip based on vehicle capacity
 // @route   POST /api/v1/seats/initialize
@@ -26,13 +27,15 @@ const initializeSeats = asyncHandler(async (req, res, next) => {
   }
 
   const capacity = trip.vehicle.capacity;
+  // Type follows the seat's position in the bus (front row, window, aisle)
+  const types = seatTypesForCapacity(capacity);
   const seats = [];
   for (let i = 1; i <= capacity; i++) {
     seats.push({
       trip: tripId,
       vehicle: trip.vehicle._id,
       seatNumber: i,
-      type: 'standard',
+      type: types[i - 1],
       status: 'available'
     });
   }

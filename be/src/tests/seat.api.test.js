@@ -109,6 +109,13 @@ describe('Seat API Tests', () => {
       expect(res.body.data).toHaveLength(LARGE_CAPACITY);
       expect(res.body.data[0].seatNumber).toBe(1);
       expect(res.body.data[0].status).toBe('available');
+      // Type follows position in a 2 | aisle | 2 layout: front row priority, then window / aisle
+      const typeOf = n => res.body.data.find(s => s.seatNumber === n).type;
+      expect(typeOf(1)).toBe('priority');
+      expect(typeOf(5)).toBe('window');
+      expect(typeOf(6)).toBe('aisle');
+      expect(typeOf(7)).toBe('aisle');
+      expect(typeOf(8)).toBe('window');
     });
 
     test('[Integration] Get seat map for a trip', async () => {

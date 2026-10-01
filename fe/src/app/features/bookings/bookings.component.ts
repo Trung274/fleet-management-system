@@ -17,6 +17,7 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/c
 import { ActionMenuComponent, MenuAction } from '../../shared/components/action-menu/action-menu.component';
 import { SearchInputComponent } from '../../shared/components/search-input/search-input.component';
 import { AddButtonComponent } from '../../shared/components/add-button/add-button.component';
+import { SeatMapComponent } from '../../shared/components/seat-map/seat-map.component';
 
 type ModalMode = 'create' | 'view';
 
@@ -26,7 +27,7 @@ type ModalMode = 'create' | 'view';
   imports: [
     CommonModule, FormsModule,
     ConfirmDialogComponent, ActionMenuComponent,
-    SearchInputComponent, AddButtonComponent,
+    SearchInputComponent, AddButtonComponent, SeatMapComponent,
   ],
   templateUrl: './bookings.component.html',
   styleUrl: './bookings.component.css',
@@ -89,6 +90,8 @@ export class BookingsComponent implements OnInit {
 
   // ─── Computed ──────────────────────────────────────────────────
   isViewMode  = computed(() => this.modalMode() === 'view');
+  /** Default fare of the trip picked in the form, shown in the seat summary */
+  selectedTripFare = computed(() => this.trips().find(t => t._id === this.form().tripId)?.fare);
   modalTitle  = computed(() =>
     this.modalMode() === 'create' ? 'Đặt Vé Mới' : 'Chi Tiết Đặt Vé'
   );
@@ -144,7 +147,7 @@ export class BookingsComponent implements OnInit {
   async loadSeatsForTrip(tripId: string): Promise<void> {
     if (!tripId) { this.seats.set([]); return; }
     try {
-      const res = await this.seatService.getSeatMap(tripId, 'available');
+      const res = await this.seatService.getSeatMap(tripId);
       this.seats.set(res.data);
     } catch {
       this.seats.set([]);

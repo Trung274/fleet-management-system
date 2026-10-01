@@ -1,171 +1,263 @@
 <!-- ─── Welcome ──────────────────────────────────────────────────── -->
 <div class="welcome-section">
   <div class="welcome-left">
-    <h1 class="welcome-title">
-      Xin chào, {{ authService.user()?.name ?? 'User' }}!
-    </h1>
-    <p class="welcome-subtitle">
-      Hệ thống vận tải thông minh | Trạng thái vận hành ngày hôm nay.
-    </p>
+    <h1 class="welcome-title">Xin chào, {{ authService.user()?.name ?? 'User' }}!</h1>
+    <p class="welcome-subtitle">Tình hình vận hành hôm nay {{ todayDate | date:'dd/MM/yyyy' }}</p>
   </div>
-  <div class="welcome-time-display">
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="clock-icon">
-      <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+  <button type="button" class="refresh-btn" (click)="loadStats()" [disabled]="isLoading()" title="Tải lại số liệu">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" [class.spinning]="isLoading()">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
     </svg>
-    <span>Hôm nay: {{ todayDate | date:'dd/MM/yyyy' }}</span>
-  </div>
+    Cập nhật {{ now() | date:'HH:mm' }}
+  </button>
 </div>
 
-<!-- ─── Stat Cards ───────────────────────────────────────────────── -->
-<div class="stats-grid">
-  @for (card of statCards; track card.label) {
-    <div class="stat-card">
-      <div class="stat-icon-wrapper" [style.background]="card.gradient">
-        @switch (card.icon) {
-          @case ('vehicle') {
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="card-icon blue">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
-            </svg>
-          }
-          @case ('driver') {
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="card-icon purple">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-            </svg>
-          }
-          @case ('trip') {
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="card-icon amber">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z" />
-            </svg>
-          }
-          @case ('booking') {
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="card-icon emerald">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 010 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 010-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375z" />
-            </svg>
-          }
-        }
-      </div>
-      <div class="stat-info">
-        @if (isLoading()) {
-          <div class="skeleton skeleton-value"></div>
-          <div class="skeleton skeleton-label"></div>
-        } @else {
-          <p class="stat-value">{{ card.value() }}</p>
-          <p class="stat-label">{{ card.label }}</p>
-          <p class="stat-desc">{{ card.desc() }}</p>
-        }
-      </div>
-    </div>
-  }
-</div>
-
-<!-- ─── Error state ──────────────────────────────────────────────── -->
 @if (hasError()) {
-  <div class="error-banner">
-    <span>⚠️</span>
-    <span>Không thể kết nối hoặc tải dữ liệu từ máy chủ.</span>
+  <div class="error-banner" role="alert">
+    <span>Không thể tải số liệu từ máy chủ.</span>
     <button class="retry-btn" (click)="loadStats()">Thử lại</button>
   </div>
 }
 
-<!-- ─── Two Column Layout ────────────────────────────────────────── -->
-<div class="dashboard-grid-layout">
-  
-  <!-- Left Side: Recent Trips -->
-  <div class="layout-main">
-    <div class="section-header">
-      <h2 class="section-title">Chuyến xe mới nhất</h2>
-      @if (authService.can('trips', 'read')) {
-        <a routerLink="/trips" class="section-link">Xem tất cả →</a>
+<!-- ─── KPI tiles (each only when the user may see that data) ────── -->
+<div class="kpi-grid">
+  @if (isLoading() && !stats()) {
+    @for (i of [1, 2, 3, 4]; track i) {
+      <div class="kpi-card"><div class="skeleton skeleton-value"></div><div class="skeleton skeleton-label"></div></div>
+    }
+  }
+
+  @if (trips(); as t) {
+    <a class="kpi-card" routerLink="/trips">
+      <p class="kpi-label">Chuyến hôm nay</p>
+      <p class="kpi-value">{{ t.today.total }}</p>
+      @if (tripsTrend(); as tr) {
+        <p class="kpi-trend" [class]="'kpi-trend trend-' + tr.direction">{{ tr.text }}</p>
       }
+      <div class="kpi-chips">
+        <span class="chip chip-running">{{ t.today.inProgress }} đang chạy</span>
+        @if (t.today.delayed) { <span class="chip chip-late">{{ t.today.delayed }} trễ</span> }
+        <span class="chip">{{ t.today.completed }} xong</span>
+      </div>
+    </a>
+  }
+
+  @if (revenue(); as r) {
+    <a class="kpi-card" routerLink="/bookings">
+      <p class="kpi-label">Doanh thu hôm nay</p>
+      <p class="kpi-value" [title]="(r.today.confirmed | number) + ' ₫'">{{ shortMoney(r.today.confirmed) }}<span class="kpi-unit">₫</span></p>
+      @if (revenueTrend(); as tr) {
+        <p class="kpi-trend" [class]="'kpi-trend trend-' + tr.direction">{{ tr.text }}</p>
+      }
+      <p class="kpi-sub">
+        {{ r.today.tickets }} vé đặt hôm nay
+        @if (r.today.pending) { · <span [title]="(r.today.pending | number) + ' ₫'">{{ shortMoney(r.today.pending) }} ₫ chờ xác nhận</span> }
+      </p>
+    </a>
+  }
+
+  @if (occupancy(); as o) {
+    <div class="kpi-card">
+      <p class="kpi-label">Lấp đầy ghế hôm nay</p>
+      <p class="kpi-value">{{ o.pct }}<span class="kpi-unit">%</span></p>
+      @if (o.trend; as tr) {
+        <p class="kpi-trend" [class]="'kpi-trend trend-' + tr.direction">{{ tr.text }}</p>
+      }
+      <div class="meter" role="meter" [attr.aria-valuenow]="o.pct" aria-valuemin="0" aria-valuemax="100" aria-label="Tỷ lệ lấp đầy ghế">
+        <span class="meter-fill" [style.width.%]="o.pct"></span>
+      </div>
+      <p class="kpi-sub">{{ o.taken }}/{{ o.total }} ghế đã đặt hoặc đang giữ</p>
     </div>
+  } @else if (stats()?.seats) {
+    <div class="kpi-card">
+      <p class="kpi-label">Lấp đầy ghế hôm nay</p>
+      <p class="kpi-value">—</p>
+      <p class="kpi-sub">Hôm nay chưa có chuyến nào có sơ đồ ghế</p>
+    </div>
+  }
 
-    <div class="trips-card">
-      @if (isLoading()) {
-        @for (i of [1,2,3,4,5]; track i) {
-          <div class="trip-row skeleton-row">
-            <div class="skeleton skeleton-route"></div>
-            <div class="skeleton skeleton-badge"></div>
-            <div class="skeleton skeleton-text"></div>
-            <div class="skeleton skeleton-text"></div>
-          </div>
+  @if (vehicles(); as v) {
+    <a class="kpi-card" routerLink="/vehicles">
+      <p class="kpi-label">Xe sẵn sàng</p>
+      <p class="kpi-value">{{ v.active }}<span class="kpi-unit">/ {{ v.total }}</span></p>
+      <div class="kpi-chips">
+        @if (v.maintenance) { <span class="chip chip-late">{{ v.maintenance }} đang bảo dưỡng</span> }
+        @if (v.outOfService) { <span class="chip chip-bad">{{ v.outOfService }} ngừng hoạt động</span> }
+        @if (!v.maintenance && !v.outOfService) { <span class="chip chip-running">Toàn bộ đội xe sẵn sàng</span> }
+      </div>
+    </a>
+  }
+</div>
+
+<!-- ─── Main grid ────────────────────────────────────────────────── -->
+<div class="dash-grid">
+  <div class="dash-main">
+
+    <!-- Today's schedule -->
+    @if (trips(); as t) {
+      <section class="card">
+        <header class="card-head">
+          <h2 class="card-title">Lịch chạy hôm nay</h2>
+          <a routerLink="/trips" class="card-link">Tất cả chuyến →</a>
+        </header>
+        @if (schedule().length === 0) {
+          <p class="empty">Hôm nay không có chuyến nào.</p>
+        } @else {
+          <ol class="schedule">
+            @for (s of schedule(); track s._id) {
+              <li class="schedule-item" [class]="'schedule-item state-' + s.state">
+                <div class="schedule-time">
+                  <span class="dep">{{ time(s.scheduledDeparture) }}</span>
+                  <span class="arr">→ {{ time(s.scheduledArrival) }}</span>
+                </div>
+                <div class="schedule-body">
+                  <div class="schedule-top">
+                    <span class="route-code">{{ s.route?.code }}</span>
+                    <span class="route-name">{{ s.route?.origin }} → {{ s.route?.destination }}</span>
+                    <span class="state-badge" [class]="'state-badge badge-' + s.state">{{ statusLabel(s) }}</span>
+                    @if (s.countdown) { <span class="countdown">{{ s.countdown }}</span> }
+                  </div>
+                  <div class="schedule-meta">
+                    <span>{{ s.vehicle?.registrationNumber ?? '—' }}</span>
+                    <span>·</span>
+                    <span>{{ s.driver ? s.driver.firstName + ' ' + s.driver.lastName : '—' }}</span>
+                  </div>
+                </div>
+                @if (s.seats) {
+                  <div class="schedule-seats" [title]="s.seats.taken + '/' + s.seats.total + ' ghế'">
+                    @if (s.seats.total) {
+                      <div class="meter meter-sm"><span class="meter-fill" [style.width.%]="pct(s.seats.taken, s.seats.total)"></span></div>
+                      <span class="seats-text">{{ s.seats.taken }}/{{ s.seats.total }}</span>
+                    } @else {
+                      <span class="seats-text muted">chưa có ghế</span>
+                    }
+                  </div>
+                }
+              </li>
+            }
+          </ol>
         }
-      } @else if (recentTrips.length === 0) {
-        <div class="empty-state">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="empty-icon-svg">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12.25 13.5h.008v.008h-.008V13.5zM15 13.5h.008v.008H15V13.5zM17.75 13.5h.008v.008h-.008V13.5zM12.25 16.5h.008v.008h-.008V16.5zM15 16.5h.008v.008H15V16.5zM17.75 16.5h.008v.008h-.008V16.5zM3.75 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-          </svg>
-          <p>Hiện tại chưa có chuyến đi nào được tạo.</p>
-        </div>
-      } @else {
-        <!-- Header row -->
-        <div class="trip-row trip-row-header">
-          <span>Lộ trình & Tuyến đường</span>
-          <span>Trạng thái</span>
-          <span>Giờ khởi hành</span>
-          <span>Tài xế & Phương tiện</span>
-        </div>
+      </section>
+    }
 
-        @for (trip of recentTrips; track trip._id) {
-          <div class="trip-row">
-            <!-- Route -->
-            <div class="trip-route">
-              <span class="trip-route-name">{{ trip.route.name }}</span>
-              <span class="trip-route-leg">
-                <span class="loc-badge origin">A</span> {{ trip.route.origin }}
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="leg-arrow">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                </svg>
-                <span class="loc-badge dest">B</span> {{ trip.route.destination }}
-              </span>
-            </div>
-
-            <!-- Status badge -->
-            <div class="status-col">
-              <span class="badge" [ngClass]="statusClass(trip.status)">
-                <span class="badge-dot"></span>
-                {{ statusLabel(trip.status) }}
-              </span>
-              @if (trip.status === 'delayed' && trip.delayReason) {
-                <span class="delay-tooltip" [title]="trip.delayReason">
-                  Trễ {{ trip.delayDuration }}p
-                </span>
+    <!-- Revenue, last 7 days -->
+    @if (revenue(); as r) {
+      <section class="card">
+        <header class="card-head">
+          <div>
+            <h2 class="card-title">Doanh thu 7 ngày</h2>
+            <p class="card-sub">Vé đã xác nhận · tổng {{ weekTotals().revenue | number }} ₫ · {{ weekTotals().tickets }} vé</p>
+          </div>
+        </header>
+        <div class="chart" aria-hidden="true">
+          <div class="chart-plot">
+            @if (revenueMax()) {
+              <div class="gridline" style="bottom:100%"><span>{{ shortMoney(revenueMax()) }}</span></div>
+              <div class="gridline" style="bottom:50%"><span>{{ shortMoney(revenueMax() / 2) }}</span></div>
+            }
+            <div class="gridline baseline" style="bottom:0"><span>0</span></div>
+            <div class="bars">
+              @for (d of revenueDays(); track d.date; let i = $index) {
+                <div class="bar-col" tabindex="0"
+                  (mouseenter)="hoveredDay.set(i)" (mouseleave)="hoveredDay.set(null)"
+                  (focus)="hoveredDay.set(i)" (blur)="hoveredDay.set(null)">
+                  <div class="bar" [class.is-hovered]="hoveredDay() === i" [style.height.%]="barHeight(d.revenue)"></div>
+                  @if (hoveredDay() === i) {
+                    <div class="chart-tooltip" [class.align-right]="i >= revenueDays().length - 2">
+                      <p class="tt-date">{{ dayLabel(d).weekday }} {{ dayLabel(d).date }}</p>
+                      <p class="tt-row"><span>Doanh thu</span><strong>{{ d.revenue | number }} ₫</strong></p>
+                      @if (d.pending) { <p class="tt-row"><span>Chờ xác nhận</span><strong>{{ d.pending | number }} ₫</strong></p> }
+                      <p class="tt-row"><span>Số vé</span><strong>{{ d.tickets }}</strong></p>
+                    </div>
+                  }
+                </div>
               }
             </div>
-
-            <!-- Departure -->
-            <div class="trip-time-col">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="time-col-icon">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span class="trip-time">
-                {{ trip.scheduledDeparture | date:'dd/MM HH:mm' }}
-              </span>
-            </div>
-
-            <!-- Vehicle / Driver -->
-            <div class="trip-resource">
-              <div class="driver-info">
-                <div class="driver-avatar-mini">{{ trip.driver.lastName.charAt(0) }}{{ trip.driver.firstName.charAt(0) }}</div>
-                <span class="trip-driver-name">
-                  {{ trip.driver.lastName }} {{ trip.driver.firstName }}
-                </span>
-              </div>
-              <span class="trip-vehicle-plate">
-                {{ trip.vehicle.registrationNumber }}
-              </span>
-            </div>
           </div>
+          <div class="x-labels">
+            @for (d of revenueDays(); track d.date) {
+              <span [class.is-today]="dayLabel(d).isToday">
+                {{ dayLabel(d).isToday ? 'Hôm nay' : dayLabel(d).weekday }}<br /><small>{{ dayLabel(d).date }}</small>
+              </span>
+            }
+          </div>
+        </div>
+        <!-- Same data as a table for screen readers -->
+        <div class="visually-hidden"><table>
+          <caption>Doanh thu 7 ngày</caption>
+          <tr><th>Ngày</th><th>Doanh thu (₫)</th><th>Chờ xác nhận (₫)</th><th>Số vé</th></tr>
+          @for (d of revenueDays(); track d.date) {
+            <tr><td>{{ d.date }}</td><td>{{ d.revenue }}</td><td>{{ d.pending }}</td><td>{{ d.tickets }}</td></tr>
+          }
+        </table></div>
+      </section>
+
+      <!-- Busiest routes -->
+      <section class="card">
+        <header class="card-head">
+          <div>
+            <h2 class="card-title">Tuyến đông khách 7 ngày qua</h2>
+            <p class="card-sub">Theo số vé (không tính vé đã hủy)</p>
+          </div>
+        </header>
+        @if (r.topRoutes.length === 0) {
+          <p class="empty">Chưa có vé nào trong 7 ngày qua.</p>
+        } @else {
+          <ul class="top-routes">
+            @for (route of r.topRoutes; track route.code) {
+              <li>
+                <div class="tr-label">
+                  <span class="route-code">{{ route.code }}</span>
+                  <span class="tr-name">{{ route.name }}</span>
+                </div>
+                <div class="tr-bar-wrap">
+                  <span class="tr-bar" [style.width.%]="pct(route.tickets, topRouteMax())"></span>
+                </div>
+                <span class="tr-value">{{ route.tickets }} vé · {{ shortMoney(route.revenue) }} ₫</span>
+              </li>
+            }
+          </ul>
         }
-      }
-    </div>
+      </section>
+    }
   </div>
 
-  <!-- Right Side: Fleet Allocation & Quick Actions -->
-  <div class="layout-sidebar">
-    <!-- Quick Actions (only the ones this user is allowed to do) -->
+  <!-- ─── Side column ─────────────────────────────────────────────── -->
+  <aside class="dash-side">
+
+    <!-- Needs attention (same feed as the header bell) -->
+    <section class="card">
+      <header class="card-head">
+        <h2 class="card-title">Cần xử lý</h2>
+        @if (alertCount() > alerts().length) {
+          <span class="card-sub">{{ alerts().length }}/{{ alertCount() }}</span>
+        }
+      </header>
+      @if (alerts().length === 0) {
+        <p class="empty all-good">Không có việc cần xử lý.</p>
+      } @else {
+        <ul class="alerts">
+          @for (a of alerts(); track a.id) {
+            <li>
+              <button type="button" class="alert-item" [class]="'alert-item sev-' + a.severity" (click)="openAlert(a)">
+                <span class="alert-dot" aria-hidden="true"></span>
+                <span class="alert-text">
+                  <span class="alert-title">{{ a.title }}</span>
+                  <span class="alert-msg">{{ a.message }}</span>
+                </span>
+              </button>
+            </li>
+          }
+        </ul>
+        @if (alertCount() > alerts().length) {
+          <p class="card-foot">Xem tất cả ở chuông thông báo trên cùng</p>
+        }
+      }
+    </section>
+
     @if (hasQuickActions()) {
-      <div class="sidebar-card actions-card">
-        <h3 class="sidebar-card-title">Thao tác nhanh</h3>
+      <section class="card">
+        <header class="card-head"><h2 class="card-title">Thao tác nhanh</h2></header>
         <div class="quick-actions-grid">
           @if (authService.can('trips', 'create')) {
             <a routerLink="/trips" class="action-tile">
@@ -208,51 +300,44 @@
             </a>
           }
         </div>
-      </div>
+      </section>
     }
 
-    <!-- Resource Status Chart Breakdown -->
-    <div class="sidebar-card chart-card">
-      <h3 class="sidebar-card-title">Phân bổ nguồn lực</h3>
-      
-      @if (isLoading()) {
-        <div class="skeleton-chart"></div>
-      } @else {
-        <!-- Vehicles Allocation -->
-        <div class="alloc-section">
-          <div class="alloc-header">
-            <span>Trạng thái phương tiện</span>
-            <span class="alloc-total">{{ stats()?.vehicles?.total }} Xe</span>
+    <!-- Fleet & drivers -->
+    @if (vehicles() || drivers()) {
+      <section class="card">
+        <header class="card-head"><h2 class="card-title">Đội xe & tài xế</h2></header>
+        @if (vehicles(); as v) {
+          <div class="split">
+            <p class="split-title"><span>Xe</span><strong>{{ v.total }}</strong></p>
+            <div class="split-bar">
+              @if (v.active) { <span class="seg seg-good" [style.flex]="v.active"></span> }
+              @if (v.maintenance) { <span class="seg seg-warn" [style.flex]="v.maintenance"></span> }
+              @if (v.outOfService) { <span class="seg seg-bad" [style.flex]="v.outOfService"></span> }
+            </div>
+            <ul class="split-legend">
+              <li><i class="dot seg-good"></i>Hoạt động <strong>{{ v.active }}</strong></li>
+              <li><i class="dot seg-warn"></i>Bảo dưỡng <strong>{{ v.maintenance }}</strong></li>
+              <li><i class="dot seg-bad"></i>Ngừng <strong>{{ v.outOfService }}</strong></li>
+            </ul>
           </div>
-          <div class="alloc-multi-bar">
-            <div class="bar-segment active" [style.width.%]="vehiclePercentActive()" title="Hoạt động"></div>
-            <div class="bar-segment maintenance" [style.width.%]="vehiclePercentMaintenance()" title="Bảo trì"></div>
-            <div class="bar-segment out" [style.width.%]="vehiclePercentOut()" title="Ngưng hoạt động"></div>
+        }
+        @if (drivers(); as d) {
+          <div class="split">
+            <p class="split-title"><span>Tài xế</span><strong>{{ d.total }}</strong></p>
+            <div class="split-bar">
+              @if (d.active) { <span class="seg seg-good" [style.flex]="d.active"></span> }
+              @if (d.onLeave) { <span class="seg seg-warn" [style.flex]="d.onLeave"></span> }
+              @if (d.suspended) { <span class="seg seg-bad" [style.flex]="d.suspended"></span> }
+            </div>
+            <ul class="split-legend">
+              <li><i class="dot seg-good"></i>Đang làm <strong>{{ d.active }}</strong></li>
+              <li><i class="dot seg-warn"></i>Nghỉ phép <strong>{{ d.onLeave }}</strong></li>
+              <li><i class="dot seg-bad"></i>Đình chỉ <strong>{{ d.suspended }}</strong></li>
+            </ul>
           </div>
-          <div class="alloc-legend">
-            <div class="legend-item"><span class="dot active"></span> <span>Hoạt động ({{ stats()?.vehicles?.active }})</span></div>
-            <div class="legend-item"><span class="dot maintenance"></span> <span>Bảo trì ({{ stats()?.vehicles?.maintenance }})</span></div>
-            <div class="legend-item"><span class="dot out"></span> <span>Khác ({{ stats()?.vehicles?.outOfService }})</span></div>
-          </div>
-        </div>
-
-        <!-- Drivers Allocation -->
-        <div class="alloc-section" style="margin-top: 24px;">
-          <div class="alloc-header">
-            <span>Trạng thái tài xế</span>
-            <span class="alloc-total">{{ stats()?.drivers?.total }} Tài xế</span>
-          </div>
-          <div class="alloc-multi-bar">
-            <div class="bar-segment active" [style.width.%]="driverPercentActive()" title="Đang chạy"></div>
-            <div class="bar-segment inactive" [style.width.%]="driverPercentInactive()" title="Nghỉ / Rảnh"></div>
-          </div>
-          <div class="alloc-legend">
-            <div class="legend-item"><span class="dot active"></span> <span>Hoạt động ({{ stats()?.drivers?.active }})</span></div>
-            <div class="legend-item"><span class="dot inactive"></span> <span>Nghỉ/Rảnh ({{ stats()?.drivers?.inactive }})</span></div>
-          </div>
-        </div>
-      }
-    </div>
-  </div>
-
+        }
+      </section>
+    }
+  </aside>
 </div>

@@ -31,12 +31,14 @@ const STATE_LABELS: Record<SeatState, string> = {
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="seat-map">
+    <div class="seat-map" [class.is-readonly]="readonly()">
       <div class="seat-map-head">
         <span class="seat-count">Còn <strong>{{ availableCount() }}</strong>/{{ seats().length }} ghế trống</span>
         <div class="legend">
           <span class="legend-item"><i class="seat-dot seat-available"></i>Trống</span>
-          <span class="legend-item"><i class="seat-dot seat-selected"></i>Đang chọn</span>
+          @if (!readonly()) {
+            <span class="legend-item"><i class="seat-dot seat-selected"></i>Đang chọn</span>
+          }
           <span class="legend-item"><i class="seat-dot seat-reserved"></i>Đang giữ</span>
           <span class="legend-item"><i class="seat-dot seat-booked"></i>Đã đặt</span>
           <span class="legend-item"><i class="seat-dot seat-unavailable"></i>Hỏng</span>
@@ -81,7 +83,9 @@ const STATE_LABELS: Record<SeatState, string> = {
         <div class="bus-back">Đuôi xe</div>
       </div>
 
-      @if (selectedSeat(); as s) {
+      @if (readonly()) {
+        <!-- View only: no selection summary -->
+      } @else if (selectedSeat(); as s) {
         <div class="seat-summary">
           <span>
             Ghế <strong>{{ s.seatNumber }}</strong> · {{ typeLabel(s.type) }}
@@ -129,6 +133,8 @@ const STATE_LABELS: Record<SeatState, string> = {
       cursor:pointer; transition:background .12s, border-color .12s, transform .12s;
     }
     .seat:disabled { cursor:not-allowed; }
+    .is-readonly .seat:disabled { cursor:default; }
+    .is-readonly .seat-available:hover { border-color:rgba(255,255,255,.22); background:rgba(255,255,255,.05); transform:none; }
     .seat:focus-visible { outline:2px solid #60a5fa; outline-offset:2px; }
 
     .seat-available { background:rgba(255,255,255,.05); border:1.5px solid rgba(255,255,255,.22); color:#e2e8f0; }
@@ -171,6 +177,8 @@ export class SeatMapComponent {
   selectedId = input<string>('');
   /** Fare shown in the summary once a seat is picked */
   fare = input<number | undefined>(undefined);
+  /** Show the map without allowing a selection (e.g. trip details) */
+  readonly = input(false);
   selectedIdChange = output<string>();
 
   private seatsByNumber = computed(() => new Map(this.seats().map(s => [s.seatNumber, s])));
@@ -192,7 +200,7 @@ export class SeatMapComponent {
   }
 
   isPickable(seat: Seat): boolean {
-    return seat.status === 'available';
+    return !this.readonly() && seat.status === 'available';
   }
 
   pick(seat: Seat): void {

@@ -11,6 +11,8 @@ const Driver = require('../models/Driver.model');
 const User = require('../models/User.model');
 const Role = require('../models/Role.model');
 const Permission = require('../models/Permission.model');
+const Seat = require('../models/Seat.model');
+const Booking = require('../models/Booking.model');
 const connectDB = require('../config/database');
 const errorHandler = require('../middleware/errorHandler');
 
@@ -20,6 +22,10 @@ app.use(express.json());
 app.use('/api/v1/auth', require('../routes/auth.routes'));
 app.use('/api/v1/trips', require('../routes/trip.routes'));
 app.use(errorHandler);
+
+// Days ahead for the basic CRUD/status trips. Not 'tomorrow': seeded trips sit in the next
+// few days and the 30-minute driver rest rule would make these collide with them.
+const TEST_DAY_OFFSET = 20;
 
 describe('Trip API Tests', () => {
   let authToken;
@@ -54,12 +60,12 @@ describe('Trip API Tests', () => {
   }, 30000);
 
   afterAll(async () => {
-    await Trip.deleteMany({ 
-      $or: [
-        { fare: 999 },
-        { notes: { $regex: /TEST/i } }
-      ]
-    });
+    const testTrips = await Trip.find({ $or: [{ fare: 999 }, { notes: { $regex: /TEST/i } }] }).select('_id');
+    const ids = testTrips.map(t => t._id);
+    // Trips created through the API come with seats (and some tests add bookings)
+    await Booking.deleteMany({ trip: { $in: ids } });
+    await Seat.deleteMany({ trip: { $in: ids } });
+    await Trip.deleteMany({ _id: { $in: ids } });
     await mongoose.connection.close();
   });
 
@@ -67,7 +73,7 @@ describe('Trip API Tests', () => {
   describe('[Integration] CRUD Operations', () => {
     test('[Integration] Create trip with valid data', async () => {
       const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setDate(tomorrow.getDate() + TEST_DAY_OFFSET);
       const departure = new Date(tomorrow.setHours(10, 0, 0, 0));
       const arrival = new Date(tomorrow.setHours(11, 0, 0, 0));
 
@@ -128,6 +134,65 @@ describe('Trip API Tests', () => {
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
+      // Its seat map goes with it
+      expect(await Seat.countDocuments({ trip: testTripId })).toBe(0);
+    });
+  });
+
+  // Seat map follows the trip's vehicle
+  describe('[Integration] Seats created with the trip', () => {
+    let seatTripId;
+    const day = new Date();
+    day.setDate(day.getDate() + 70);
+    const at = h => new Date(new Date(day).setHours(h, 0, 0, 0));
+
+    test('[Integration] Creating a trip creates one seat per vehicle seat', async () => {
+      const response = await request(app)
+        .post('/api/v1/trips')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          route: testRoute._id, vehicle: testVehicle._id, driver: testDriver._id,
+          scheduledDeparture: at(8), scheduledArrival: at(9), fare: 999
+        });
+
+      expect(response.status).toBe(201);
+      seatTripId = response.body.data._id;
+      const seats = await Seat.find({ trip: seatTripId });
+      expect(seats).toHaveLength(testVehicle.capacity);
+      expect(seats.every(s => s.status === 'available')).toBe(true);
+    });
+
+    test('[Integration] Changing vehicle without bookings rebuilds the seat map', async () => {
+      const response = await request(app)
+        .put(`/api/v1/trips/${seatTripId}`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ vehicle: testVehicle2._id });
+
+      expect(response.status).toBe(200);
+      const seats = await Seat.find({ trip: seatTripId });
+      expect(seats).toHaveLength(testVehicle2.capacity);
+      expect(seats.every(s => String(s.vehicle) === String(testVehicle2._id))).toBe(true);
+    });
+
+    test('[Negative] Changing vehicle or deleting a trip with bookings returns 400', async () => {
+      const seat = await Seat.findOne({ trip: seatTripId, seatNumber: 1 });
+      await Booking.create({
+        trip: seatTripId, seat: seat._id, status: 'cancelled',
+        passenger: { name: 'Seat Test', phone: '0900000999' }
+      });
+
+      const change = await request(app)
+        .put(`/api/v1/trips/${seatTripId}`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ vehicle: testVehicle._id });
+      expect(change.status).toBe(400);
+      expect(change.body.error).toMatch(/booking/i);
+
+      const del = await request(app)
+        .delete(`/api/v1/trips/${seatTripId}`)
+        .set('Authorization', `Bearer ${authToken}`);
+      expect(del.status).toBe(400);
+      expect(del.body.error).toMatch(/booking/i);
     });
   });
 
@@ -135,7 +200,7 @@ describe('Trip API Tests', () => {
   describe('[Negative] Validation Tests', () => {
     test('[Negative] Create trip with unavailable vehicle', async () => {
       const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setDate(tomorrow.getDate() + TEST_DAY_OFFSET);
       const departure = new Date(tomorrow.setHours(14, 0, 0, 0));
       const arrival = new Date(tomorrow.setHours(15, 0, 0, 0));
 
@@ -171,7 +236,7 @@ describe('Trip API Tests', () => {
 
     test('[Negative] Create trip with unavailable driver', async () => {
       const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setDate(tomorrow.getDate() + TEST_DAY_OFFSET);
       const departure = new Date(tomorrow.setHours(16, 0, 0, 0));
       const arrival = new Date(tomorrow.setHours(17, 0, 0, 0));
 
@@ -294,7 +359,7 @@ describe('Trip API Tests', () => {
 
     test('[Negative] Create trip with invalid time range', async () => {
       const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setDate(tomorrow.getDate() + TEST_DAY_OFFSET);
       const departure = new Date(tomorrow.setHours(10, 0, 0, 0));
       const arrival = new Date(tomorrow.setHours(9, 0, 0, 0)); // Before departure
 
@@ -329,7 +394,7 @@ describe('Trip API Tests', () => {
 
     beforeAll(async () => {
       const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setDate(tomorrow.getDate() + TEST_DAY_OFFSET);
 
       // Create scheduled trip
       const scheduledTrip = await request(app)
@@ -380,7 +445,7 @@ describe('Trip API Tests', () => {
 
     test('[Integration] Mark trip as delayed', async () => {
       const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setDate(tomorrow.getDate() + TEST_DAY_OFFSET);
 
       const delayTrip = await request(app)
         .post('/api/v1/trips')
@@ -406,7 +471,7 @@ describe('Trip API Tests', () => {
 
     test('[Integration] Cancel trip with reason', async () => {
       const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setDate(tomorrow.getDate() + TEST_DAY_OFFSET);
 
       const cancelTrip = await request(app)
         .post('/api/v1/trips')
@@ -432,7 +497,7 @@ describe('Trip API Tests', () => {
 
     test('[Negative] Cancel without reason', async () => {
       const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setDate(tomorrow.getDate() + TEST_DAY_OFFSET);
 
       const trip = await request(app)
         .post('/api/v1/trips')

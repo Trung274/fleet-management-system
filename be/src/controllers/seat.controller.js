@@ -2,7 +2,7 @@ const Seat = require('../models/Seat.model');
 const Trip = require('../models/Trip.model');
 const asyncHandler = require('../utils/asyncHandler');
 const ErrorResponse = require('../utils/errorResponse');
-const { seatTypesForCapacity } = require('../utils/seatLayout');
+const { buildSeatDocs } = require('../utils/seatLayout');
 
 // @desc    Initialize seats for a trip based on vehicle capacity
 // @route   POST /api/v1/seats/initialize
@@ -26,21 +26,9 @@ const initializeSeats = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse('Seats already initialized for this trip', 400));
   }
 
-  const capacity = trip.vehicle.capacity;
-  // Type follows the seat's position in the bus (front row, window, aisle)
-  const types = seatTypesForCapacity(capacity);
-  const seats = [];
-  for (let i = 1; i <= capacity; i++) {
-    seats.push({
-      trip: tripId,
-      vehicle: trip.vehicle._id,
-      seatNumber: i,
-      type: types[i - 1],
-      status: 'available'
-    });
-  }
-
-  const createdSeats = await Seat.insertMany(seats);
+  // Trips created via the API already get seats; this covers older trips without any.
+  // Type follows the seat's position in the bus (front row, window, aisle).
+  const createdSeats = await Seat.insertMany(buildSeatDocs(trip._id, trip.vehicle));
 
   res.status(201).json({
     success: true,

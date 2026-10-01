@@ -2,6 +2,9 @@ const Trip = require('../models/Trip.model');
 const Route = require('../models/Route.model');
 const Vehicle = require('../models/Vehicle.model');
 const Driver = require('../models/Driver.model');
+const Seat = require('../models/Seat.model');
+const Booking = require('../models/Booking.model');
+const { buildSeatDocs } = require('../utils/seatLayout');
 const asyncHandler = require('../utils/asyncHandler');
 const ErrorResponse = require('../utils/errorResponse');
 
@@ -172,6 +175,14 @@ exports.createTrip = asyncHandler(async (req, res, next) => {
     notes
   });
 
+  // Every trip gets its seat map right away so it can be booked
+  try {
+    await Seat.insertMany(buildSeatDocs(trip._id, vehicleDoc));
+  } catch (err) {
+    await trip.deleteOne();
+    throw err;
+  }
+
   // Populate references
   await trip.populate([
     { path: 'route', select: 'name code origin destination' },
@@ -312,7 +323,16 @@ exports.updateTrip = asyncHandler(async (req, res, next) => {
   }
 
   // If changing vehicle, check availability
+  let newVehicleDoc = null;
   if (req.body.vehicle && req.body.vehicle !== trip.vehicle.toString()) {
+    // Seats are rebuilt for the new vehicle, which would orphan existing bookings
+    const bookingCount = await Booking.countDocuments({ trip: trip._id });
+    if (bookingCount > 0) {
+      return next(new ErrorResponse(
+        `Cannot change vehicle: trip already has ${bookingCount} booking(s), including cancelled ones`, 400
+      ));
+    }
+
     const vehicleDoc = await Vehicle.findById(req.body.vehicle);
     if (!vehicleDoc) {
       return next(new ErrorResponse('Vehicle not found', 404));
@@ -328,6 +348,7 @@ exports.updateTrip = asyncHandler(async (req, res, next) => {
     if (!vehicleAvailable) {
       return next(new ErrorResponse('Vehicle is not available for the selected time slot', 400));
     }
+    newVehicleDoc = vehicleDoc;
   }
 
   // If changing driver, check availability
@@ -397,6 +418,12 @@ exports.updateTrip = asyncHandler(async (req, res, next) => {
     if (req.body[field] !== undefined) safeUpdate[field] = req.body[field];
   });
 
+  // Rebuild the seat map for the new vehicle (no bookings exist — checked above)
+  if (newVehicleDoc) {
+    await Seat.deleteMany({ trip: trip._id });
+    await Seat.insertMany(buildSeatDocs(trip._id, newVehicleDoc));
+  }
+
   // Update trip
   trip = await Trip.findByIdAndUpdate(req.params.id, safeUpdate, {
     new: true,
@@ -429,6 +456,15 @@ exports.deleteTrip = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse('Can only delete scheduled trips', 400));
   }
 
+  // Bookings point at this trip's seats — cancel the trip instead
+  const bookingCount = await Booking.countDocuments({ trip: trip._id });
+  if (bookingCount > 0) {
+    return next(new ErrorResponse(
+      `Cannot delete trip: it has ${bookingCount} booking(s). Cancel the trip instead`, 400
+    ));
+  }
+
+  await Seat.deleteMany({ trip: trip._id });
   await trip.deleteOne();
 
   res.status(200).json({

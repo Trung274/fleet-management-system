@@ -240,6 +240,28 @@
               </div>
             </div>
 
+            <!-- Sơ đồ ghế (chỉ xem) -->
+            @if (allowReadSeats()) {
+              <div class="view-section">
+                <h3 class="view-section-title">Sơ Đồ Ghế</h3>
+                @if (isLoadingSeats()) {
+                  <p class="hint-text">Đang tải sơ đồ ghế...</p>
+                } @else if (tripSeats().length) {
+                  <app-seat-map [seats]="tripSeats()" [readonly]="true" />
+                } @else {
+                  <div class="no-seats">
+                    <p class="hint-text">Chuyến này chưa có sơ đồ ghế nên chưa đặt vé được.</p>
+                    @if (allowInitSeats() && (t.status === 'scheduled' || t.status === 'delayed')) {
+                      <button type="button" class="btn btn-primary" [disabled]="isInitSeats()" (click)="initSeats(t)">
+                        @if (isInitSeats()) { <span class="spinner-sm"></span> }
+                        Khởi tạo ghế
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+            }
+
             <!-- Thông tin thực tế -->
             <div class="view-section">
               <h3 class="view-section-title">Thông Tin Thực Tế</h3>

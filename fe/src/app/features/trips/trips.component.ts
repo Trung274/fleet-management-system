@@ -7,6 +7,9 @@ import { TripService } from '../../core/services/trip.service';
 import { RouteService } from '../../core/services/route.service';
 import { VehicleService } from '../../core/services/vehicle.service';
 import { DriverService } from '../../core/services/driver.service';
+import { SeatService } from '../../core/services/seat.service';
+import { Seat } from '../../core/models/seat.model';
+import { SeatMapComponent } from '../../shared/components/seat-map/seat-map.component';
 import {
   Trip,
   TripStatus,
@@ -26,7 +29,7 @@ type ActionDialog = 'cancel' | 'delay' | 'complete' | null;
 @Component({
   selector: 'app-trips',
   standalone: true,
-  imports: [CommonModule, FormsModule, ConfirmDialogComponent, ActionMenuComponent, SearchInputComponent, AddButtonComponent],
+  imports: [CommonModule, FormsModule, ConfirmDialogComponent, ActionMenuComponent, SearchInputComponent, AddButtonComponent, SeatMapComponent],
   templateUrl: './trips.component.html',
   styleUrl: './trips.component.css',
 })
@@ -42,6 +45,9 @@ export class TripsComponent implements OnInit {
   readonly allowCreate = computed(() => this.auth.can('trips', 'create'));
   readonly allowUpdate = computed(() => this.auth.can('trips', 'update'));
   readonly allowDelete = computed(() => this.auth.can('trips', 'delete'));
+  readonly allowReadSeats = computed(() => this.auth.can('seats', 'read'));
+  readonly allowInitSeats = computed(() => this.auth.can('seats', 'update'));
+  private seatService = inject(SeatService);
 
   // ─── Data ──────────────────────────────────────────────────────
   trips      = signal<Trip[]>([]);
@@ -50,6 +56,10 @@ export class TripsComponent implements OnInit {
   drivers    = signal<Driver[]>([]);
   isLoading  = signal(false);
   isLoadingDetail = signal(false);
+  // Seat map in the view modal
+  tripSeats      = signal<Seat[]>([]);
+  isLoadingSeats = signal(false);
+  isInitSeats    = signal(false);
   isSubmitting = signal(false);
   isActioning  = signal(false);
   isDeleting   = signal<string | null>(null);
@@ -233,6 +243,7 @@ export class TripsComponent implements OnInit {
     this.selectedTrip.set(trip);
     this.modalMode.set('view');
     this.modalOpen.set(true);
+    this.loadTripSeats(trip._id);
     this.isLoadingDetail.set(true);
     try {
       const res = await this.tripService.getById(trip._id);
@@ -241,6 +252,34 @@ export class TripsComponent implements OnInit {
       this.toastr.warning('Không thể tải chi tiết đầy đủ', 'Cảnh báo');
     } finally {
       this.isLoadingDetail.set(false);
+    }
+  }
+
+  private async loadTripSeats(tripId: string): Promise<void> {
+    this.tripSeats.set([]);
+    if (!this.allowReadSeats()) return;
+    this.isLoadingSeats.set(true);
+    try {
+      const res = await this.seatService.getSeatMap(tripId);
+      this.tripSeats.set(res.data);
+    } catch {
+      this.toastr.warning('Không thể tải sơ đồ ghế', 'Cảnh báo');
+    } finally {
+      this.isLoadingSeats.set(false);
+    }
+  }
+
+  /** For trips created before seats were generated automatically */
+  async initSeats(trip: Trip): Promise<void> {
+    this.isInitSeats.set(true);
+    try {
+      await this.seatService.initializeSeats(trip._id);
+      this.toastr.success('Đã khởi tạo sơ đồ ghế', 'Thành công');
+      await this.loadTripSeats(trip._id);
+    } catch (err: any) {
+      this.toastr.error(err?.error?.error ?? 'Không thể khởi tạo ghế', 'Lỗi');
+    } finally {
+      this.isInitSeats.set(false);
     }
   }
 

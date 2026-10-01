@@ -69,4 +69,16 @@ const seatTypesForCapacity = (capacity) => {
   return types;
 };
 
-module.exports = { seatsPerRow, buildSeatLayout, seatTypesForCapacity };
+/** Seat documents for a trip on the given vehicle: one per seat, all available */
+const buildSeatDocs = (tripId, vehicle) => {
+  const types = seatTypesForCapacity(vehicle.capacity);
+  return types.map((type, i) => ({
+    trip: tripId,
+    vehicle: vehicle._id,
+    seatNumber: i + 1,
+    type,
+    status: 'available'
+  }));
+};
+
+module.exports = { seatsPerRow, buildSeatLayout, seatTypesForCapacity, buildSeatDocs };

@@ -204,3 +204,7 @@
 .view-info-value { font-size:.875rem; font-weight:600; color:#f1f5f9; }
 .view-info-danger  { border-color:rgba(239,68,68,.3);  background:rgba(239,68,68,.06); }
 .view-info-warning { border-color:rgba(245,158,11,.3); background:rgba(245,158,11,.06); }
+
+/* ─── Seat map in view modal ──────────────────────────────────── */
+.hint-text { font-size:.8rem; color:#64748b; margin:0; font-style:italic; }
+.no-seats { display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap; }

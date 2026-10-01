@@ -38,8 +38,8 @@ const seedBookings = async () => {
     await Seat.deleteMany({});
     console.log('✓ Cleared existing itineraries, seats and bookings');
 
-    // Every trip that can still take bookings gets a seat map
-    const bookableTrips = await Trip.find({ status: { $in: ['scheduled', 'delayed'] } })
+    // Every trip that is still to run (or running) gets a seat map
+    const bookableTrips = await Trip.find({ status: { $in: ['scheduled', 'delayed', 'in-progress'] } })
       .populate('vehicle')
       .populate('route')
       .sort('scheduledDeparture');
@@ -226,6 +226,54 @@ const seedBookings = async () => {
       console.log(`  ✓ Itinerary ${leg1.route.origin} → ${leg1.route.destination} → ${leg2.route.destination} (${sample.status})`);
     }
     console.log(`✓ Created ${createdItineraries.length} sample itineraries`);
+
+    // ─── Bulk bookings so the dashboard has realistic numbers ──────
+    // 35–75% of each trip's free seats, booked over the last 6 days; mostly confirmed.
+    // Fixed-seed random so every seed run gives the same data.
+    let rngState = 20261001;
+    const rand = () => (rngState = (rngState * 1103515245 + 12345) % 2147483648) / 2147483648;
+    const pick = (arr) => arr[Math.floor(rand() * arr.length)];
+    const FAMILY = ['Nguyễn', 'Trần', 'Lê', 'Phạm', 'Hoàng', 'Vũ', 'Đặng', 'Bùi', 'Đỗ', 'Ngô'];
+    const MIDDLE = ['Văn', 'Thị', 'Minh', 'Đức', 'Thu', 'Quang', 'Ngọc', 'Hải'];
+    const GIVEN = ['An', 'Bình', 'Châu', 'Dũng', 'Giang', 'Hà', 'Khánh', 'Linh', 'Nam', 'Phương', 'Quân', 'Thảo', 'Tuấn', 'Yến'];
+
+    const usedSeatIds = new Set([
+      ...bookingsData.map(b => String(b.seat)),
+      ...(await Booking.find({ itinerary: { $ne: null } }).select('seat')).map(b => String(b.seat))
+    ]);
+    const bulk = [];
+    const seatUpdates = [];
+    const now = Date.now();
+    for (const trip of bookableTrips) {
+      const free = allSeats.filter(s => String(s.trip) === String(trip._id) && !usedSeatIds.has(String(s._id)));
+      const count = Math.floor(free.length * (0.35 + rand() * 0.4));
+      const chosen = [...free].sort(() => rand() - 0.5).slice(0, count);
+      for (const seat of chosen) {
+        const roll = rand();
+        const status = roll < 0.75 ? 'confirmed' : roll < 0.95 ? 'pending' : 'cancelled';
+        // Booked sometime in the last 6 days, never after departure
+        const bookedAt = new Date(Math.min(now - rand() * 6 * 24 * 60 * 60 * 1000, trip.scheduledDeparture.getTime() - 60 * 60 * 1000));
+        bulk.push({
+          trip: trip._id,
+          seat: seat._id,
+          passenger: {
+            name: `${pick(FAMILY)} ${pick(MIDDLE)} ${pick(GIVEN)}`,
+            phone: `09${String(Math.floor(rand() * 1e8)).padStart(8, '0')}`
+          },
+          fare: trip.fare,
+          status,
+          bookedAt,
+          ...(status === 'confirmed' && { confirmedAt: new Date(bookedAt.getTime() + 30 * 60 * 1000) }),
+          ...(status === 'cancelled' && { cancelledAt: new Date(bookedAt.getTime() + 60 * 60 * 1000), cancellationReason: 'Hành khách đổi kế hoạch' })
+        });
+        if (status !== 'cancelled') {
+          seatUpdates.push({ updateOne: { filter: { _id: seat._id }, update: { status: status === 'confirmed' ? 'booked' : 'reserved' } } });
+        }
+      }
+    }
+    await Booking.insertMany(bulk);
+    if (seatUpdates.length) await Seat.bulkWrite(seatUpdates);
+    console.log(`✓ Created ${bulk.length} extra bookings over the last 6 days`);
 
     console.log('\n🎉 Bookings seed completed successfully!');
     console.log('\n📊 Summary:');

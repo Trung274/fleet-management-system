@@ -117,6 +117,7 @@ router.post('/',
  */
 router.get('/', 
   protect, 
+  checkPermission('vehicles', 'read'),
   vehicleController.getAllVehicles
 );
 
@@ -145,6 +146,7 @@ router.get('/',
  */
 router.get('/:id', 
   protect, 
+  checkPermission('vehicles', 'read'),
   vehicleController.getVehicleById
 );
 

@@ -124,6 +124,7 @@ router.post('/',
  */
 router.get('/', 
   protect, 
+  checkPermission('routes', 'read'),
   routeController.getAllRoutes
 );
 
@@ -152,6 +153,7 @@ router.get('/',
  */
 router.get('/:id', 
   protect, 
+  checkPermission('routes', 'read'),
   routeController.getRouteById
 );
 

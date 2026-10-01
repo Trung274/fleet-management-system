@@ -5,6 +5,9 @@ require('dotenv').config();
 
 const Route = require('../models/Route.model');
 const RouteStop = require('../models/RouteStop.model');
+// Ensure all schemas are registered for Mongoose population (login populates role.permissions)
+require('../models/Role.model');
+require('../models/Permission.model');
 const connectDB = require('../config/database');
 const errorHandler = require('../middleware/errorHandler');
 
@@ -449,6 +452,19 @@ describe('Route API Tests', () => {
 
   // Security Tests
   describe('[Security] Authentication and Authorization', () => {
+    test('[Security] Staff without routes:read gets 403 on list', async () => {
+      const login = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ email: 'staff@example.com', password: 'Staff@123' });
+      expect(login.body.data?.token).toBeDefined();
+
+      const response = await request(app)
+        .get('/api/v1/routes')
+        .set('Authorization', `Bearer ${login.body.data.token}`);
+
+      expect(response.status).toBe(403);
+    });
+
     test('[Security] Require authentication for route access', async () => {
       const response = await request(app)
         .get('/api/v1/routes');

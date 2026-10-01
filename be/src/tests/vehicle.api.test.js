@@ -4,6 +4,9 @@ const express = require('express');
 require('dotenv').config();
 
 const Vehicle = require('../models/Vehicle.model');
+// Ensure all schemas are registered for Mongoose population (login populates role.permissions)
+require('../models/Role.model');
+require('../models/Permission.model');
 const connectDB = require('../config/database');
 const errorHandler = require('../middleware/errorHandler');
 
@@ -237,6 +240,19 @@ describe('Vehicle API Tests', () => {
 
   // Security Tests
   describe('[Security] Authentication and Authorization', () => {
+    test('[Security] Staff without vehicles:read gets 403 on list', async () => {
+      const login = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ email: 'staff@example.com', password: 'Staff@123' });
+      expect(login.body.data?.token).toBeDefined();
+
+      const response = await request(app)
+        .get('/api/v1/vehicles')
+        .set('Authorization', `Bearer ${login.body.data.token}`);
+
+      expect(response.status).toBe(403);
+    });
+
     test('[Security] Require authentication for vehicle access', async () => {
       const response = await request(app)
         .get('/api/v1/vehicles');

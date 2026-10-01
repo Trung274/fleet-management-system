@@ -54,8 +54,6 @@
   background:rgba(100,116,139,.15); color:#94a3b8; border:1px solid rgba(100,116,139,.3);
 }
 
-/* Cell changed but not saved yet */
-.cell-changed { background:rgba(245,158,11,.08); }
 
 /* ─── Checkbox ────────────────────────────────────────────────── */
 .check {

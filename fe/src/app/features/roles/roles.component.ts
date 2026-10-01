@@ -181,10 +181,6 @@ export class RolesComponent implements OnInit {
     return this.draft()[role._id]?.has(perm._id) ?? false;
   }
 
-  isChanged(role: Role, perm: PermissionItem): boolean {
-    return this.has(role, perm) !== (this.saved()[role._id]?.has(perm._id) ?? false);
-  }
-
   toggle(role: Role, perm: PermissionItem): void {
     this.draft.update(d => {
       const next = new Set(d[role._id]);

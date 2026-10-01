@@ -86,7 +86,7 @@
                   }
                 </td>
                 @for (role of sortedRoles(); track role._id) {
-                  <td class="cell" [class.cell-changed]="isChanged(role, perm)">
+                  <td class="cell">
                     @if (isAdmin(role)) {
                       <span class="check checked locked" title="Admin luôn có toàn quyền">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">

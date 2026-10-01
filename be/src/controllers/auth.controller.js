@@ -173,11 +173,49 @@ exports.logout = asyncHandler(async (req, res, next) => {
   });
 });
 
+// @desc    Change own password — signs out every other device
+// @route   PUT /api/v1/auth/change-password
+// @access  Private
+exports.changePassword = asyncHandler(async (req, res, next) => {
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword) {
+    return next(new ErrorResponse('Please provide current and new password', 400));
+  }
+
+  const user = await User.findById(req.user.id).select('+password');
+
+  // 400 rather than 401: the frontend treats 401 as an expired session
+  if (!(await user.comparePassword(currentPassword))) {
+    return next(new ErrorResponse('Current password is incorrect', 400));
+  }
+  if (currentPassword === newPassword) {
+    return next(new ErrorResponse('New password must be different from the current one', 400));
+  }
+
+  user.password = newPassword; // hashed in pre-save; minlength checked by the schema
+  // Access tokens issued before now fail changedPasswordAfter() in protect
+  user.passwordChangedAt = new Date();
+
+  // Keep this device signed in with fresh tokens; drop every other refresh token
+  const token = generateToken(user._id);
+  const refreshToken = generateRefreshToken(user._id);
+  user.refreshTokens = [{ token: refreshToken }];
+  await user.save();
+
+  res.status(200).json({
+    success: true,
+    message: 'Password changed successfully',
+    data: { token, refreshToken }
+  });
+});
+
 // @desc    Get current user
 // @route   GET /api/v1/auth/me
 // @access  Private
 exports.getMe = asyncHandler(async (req, res, next) => {
-  const user = await User.findById(req.user.id);
+  // createdBy is shown on the profile page ("account created by")
+  const user = await User.findById(req.user.id).populate('createdBy', 'name email');
 
   res.status(200).json({
     success: true,

@@ -153,4 +153,39 @@ router.post('/logout', protect, authController.logout);
  */
 router.get('/me', protect, authController.getMe);
 
+/**
+ * @swagger
+ * /api/v1/auth/change-password:
+ *   put:
+ *     summary: Change own password (signs out every other device)
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - currentPassword
+ *               - newPassword
+ *             properties:
+ *               currentPassword:
+ *                 type: string
+ *                 example: "Staff@123"
+ *               newPassword:
+ *                 type: string
+ *                 minLength: 6
+ *                 example: "NewPass@456"
+ *     responses:
+ *       200:
+ *         description: Password changed — returns new token and refreshToken for this device
+ *       400:
+ *         description: Missing fields, wrong current password, same password, or new password too short
+ *       401:
+ *         description: Not authorized
+ */
+router.put('/change-password', protect, authController.changePassword);
+
 module.exports = router;

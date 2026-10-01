@@ -211,6 +211,34 @@ export class AuthService {
     }
   }
 
+  // ─── Profile ──────────────────────────────────────────────────
+  /** PUT /users/:id — users may only edit their own name and email */
+  async updateProfile(payload: { name: string; email: string }): Promise<void> {
+    const id = this._user()?._id;
+    if (!id) throw new Error('Not signed in');
+    const response = await firstValueFrom(
+      this.http.put<{ success: boolean; data: User }>(`${this.apiUrl}/users/${id}`, payload),
+    );
+    // Keep createdBy from /auth/me (the update response does not populate it)
+    this.updateUser({ ...response.data, createdBy: this._user()?.createdBy });
+  }
+
+  /** PUT /auth/change-password — other devices are signed out, this one gets new tokens */
+  async changePassword(currentPassword: string, newPassword: string): Promise<void> {
+    const response = await firstValueFrom(
+      this.http.put<{ success: boolean; data: { token: string; refreshToken: string } }>(
+        `${this.apiUrl}/auth/change-password`,
+        { currentPassword, newPassword },
+      ),
+    );
+    const { token, refreshToken } = response.data;
+    // Same persistence as refreshAccessToken()
+    this.tokenStorage.setToken(token, true);
+    this.tokenStorage.setRefreshToken(refreshToken, true);
+    this._token.set(token);
+    this._refreshToken.set(refreshToken);
+  }
+
   // ─── Helpers ──────────────────────────────────────────────────
   clearError(): void {
     this._error.set(null);

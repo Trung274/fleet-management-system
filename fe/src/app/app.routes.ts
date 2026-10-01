@@ -83,6 +83,14 @@ export const routes: Routes = [
         ...requires('bookings'),
       },
       {
+        // Every signed-in user can manage their own account (incl. password)
+        path: 'profile',
+        loadComponent: () =>
+          import('./features/profile/profile.component').then(
+            (m) => m.ProfileComponent,
+          ),
+      },
+      {
         // Backend restricts /roles and /permissions to the admin role itself
         path: 'roles',
         loadComponent: () =>

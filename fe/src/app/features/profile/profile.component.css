@@ -1,0 +1,79 @@
+/* Shared page styles come from bookings.component.css — only profile-specific rules here */
+
+.profile-layout { display:grid; grid-template-columns:minmax(0, 1fr) 340px; gap:1.25rem; align-items:start; }
+.profile-main { display:flex; flex-direction:column; gap:1.25rem; min-width:0; }
+@media (max-width:1100px) { .profile-layout { grid-template-columns:1fr; } }
+
+.card { background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08); border-radius:16px; }
+.card-title {
+  margin:0; padding:1rem 1.25rem; border-bottom:1px solid rgba(255,255,255,.06);
+  font-size:.8rem; font-weight:700; color:#3b82f6; text-transform:uppercase; letter-spacing:.07em;
+}
+.card-body { display:flex; flex-direction:column; gap:.85rem; padding:1.25rem; }
+.card-actions { display:flex; justify-content:flex-end; gap:.6rem; }
+.card-actions-split { justify-content:space-between; align-items:center; flex-wrap:wrap; }
+.field-error { margin:0; font-size:.8rem; color:#f87171; }
+
+/* ─── Account card ────────────────────────────────────────────── */
+.account-card { display:flex; align-items:center; gap:1.25rem; padding:1.5rem; flex-wrap:wrap; }
+.account-avatar {
+  width:72px; height:72px; border-radius:50%; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.75rem; font-weight:800; color:#fff;
+  background:linear-gradient(135deg,#3b82f6,#6366f1);
+}
+.avatar-admin   { background:linear-gradient(135deg,#ef4444,#f97316); }
+.avatar-manager { background:linear-gradient(135deg,#3b82f6,#6366f1); }
+.avatar-staff   { background:linear-gradient(135deg,#16a34a,#14b8a6); }
+.avatar-user    { background:linear-gradient(135deg,#64748b,#475569); }
+
+.account-main { flex:1; min-width:200px; }
+.account-name { margin:0; font-size:1.25rem; font-weight:700; color:#f1f5f9; }
+.account-email { margin:2px 0 .6rem; font-size:.875rem; color:#94a3b8; }
+.account-badges { display:flex; gap:.5rem; flex-wrap:wrap; }
+
+.role-badge { display:inline-block; padding:4px 10px; border-radius:999px; font-size:.75rem; font-weight:700; }
+.role-admin   { background:rgba(239,68,68,.15);  color:#f87171; border:1px solid rgba(239,68,68,.3); }
+.role-manager { background:rgba(59,130,246,.15); color:#60a5fa; border:1px solid rgba(59,130,246,.3); }
+.role-staff   { background:rgba(22,163,74,.15);  color:#4ade80; border:1px solid rgba(22,163,74,.3); }
+.role-user    { background:rgba(100,116,139,.15); color:#94a3b8; border:1px solid rgba(100,116,139,.3); }
+
+.account-meta { display:flex; gap:1.5rem; margin:0; }
+.account-meta div { display:flex; flex-direction:column; gap:2px; }
+.account-meta dt { font-size:.7rem; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:.04em; }
+.account-meta dd { margin:0; font-size:.875rem; font-weight:600; color:#e2e8f0; }
+
+/* ─── Password ────────────────────────────────────────────────── */
+.strength { display:flex; align-items:center; gap:.6rem; margin-top:4px; }
+.strength-bar { flex:1; height:5px; border-radius:999px; background:rgba(255,255,255,.08); overflow:hidden; }
+.strength-fill { display:block; height:100%; border-radius:999px; transition:width .2s; }
+.strength-weak   { width:33%;  background:#ef4444; }
+.strength-medium { width:66%;  background:#f59e0b; }
+.strength-strong { width:100%; background:#22c55e; }
+.strength-label { font-size:.72rem; font-weight:600; white-space:nowrap; }
+.strength-text-weak   { color:#f87171; }
+.strength-text-medium { color:#fbbf24; }
+.strength-text-strong { color:#4ade80; }
+
+.show-toggle { display:inline-flex; align-items:center; gap:6px; font-size:.8rem; color:#94a3b8; cursor:pointer; width:fit-content; }
+.show-toggle input { accent-color:#3b82f6; }
+
+.visually-hidden {
+  position:absolute !important; width:1px; height:1px; padding:0; margin:-1px;
+  overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;
+}
+
+/* ─── Permissions ─────────────────────────────────────────────── */
+.permissions-card { position:sticky; top:0; }
+.admin-note {
+  padding:.85rem 1rem; border-radius:10px; font-size:.85rem; line-height:1.55; color:#fca5a5;
+  background:rgba(239,68,68,.07); border:1px solid rgba(239,68,68,.25);
+}
+.admin-note strong { color:#f87171; }
+.perm-summary { margin:0; font-size:.85rem; color:#94a3b8; }
+.perm-summary strong { color:#f1f5f9; }
+.perm-group { display:flex; flex-direction:column; gap:.35rem; }
+.perm-group-title { margin:0; font-size:.72rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:.06em; }
+.perm-list { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:.3rem; }
+.perm-list li { display:flex; align-items:flex-start; gap:.5rem; font-size:.85rem; color:#e2e8f0; }
+.perm-list svg { width:15px; height:15px; flex-shrink:0; margin-top:2px; color:#4ade80; }

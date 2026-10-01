@@ -19,6 +19,8 @@ export interface User {
     permissions: Permission[];
   };
   isActive: boolean;
+  /** Populated by GET /auth/me (who created this account); missing for seeded users */
+  createdBy?: { _id: string; name: string; email: string } | string | null;
   createdAt: string;
   updatedAt: string;
 }

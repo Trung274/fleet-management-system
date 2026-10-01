@@ -1,0 +1,164 @@
+<!-- ─── Page Header ─────────────────────────────────────────────── -->
+<div class="page-header">
+  <div class="page-header-left">
+    <h1 class="page-title">Hồ Sơ Của Tôi</h1>
+    <p class="page-subtitle">Thông tin tài khoản, mật khẩu và quyền của bạn</p>
+  </div>
+</div>
+
+@if (user(); as u) {
+  <div class="profile-layout">
+    <div class="profile-main">
+
+      <!-- ─── Account card ──────────────────────────────────────── -->
+      <section class="card account-card">
+        <div class="account-avatar" [class]="'account-avatar avatar-' + roleName()">{{ initial() }}</div>
+        <div class="account-main">
+          <h2 class="account-name">{{ u.name }}</h2>
+          <p class="account-email">{{ u.email }}</p>
+          <div class="account-badges">
+            <span class="role-badge" [class]="'role-badge role-' + roleName()">{{ roleText() }}</span>
+            <span class="status-badge" [class]="u.isActive ? 'status-badge status-confirmed' : 'status-badge status-cancelled'">
+              {{ u.isActive ? 'Đang hoạt động' : 'Đã khóa' }}
+            </span>
+          </div>
+        </div>
+        <dl class="account-meta">
+          <div><dt>Tham gia</dt><dd>{{ formatDate(u.createdAt) }}</dd></div>
+          <div><dt>Tạo bởi</dt><dd>{{ createdBy() ?? 'Hệ thống' }}</dd></div>
+        </dl>
+      </section>
+
+      <!-- ─── Personal info ─────────────────────────────────────── -->
+      <section class="card">
+        <h3 class="card-title">Thông tin cá nhân</h3>
+        <form class="card-body" (submit)="$event.preventDefault(); saveInfo()">
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label" for="profile-name">Họ tên</label>
+              <input id="profile-name" class="form-input" type="text" autocomplete="name"
+                [value]="name()" [disabled]="!canEditProfile()"
+                (input)="name.set($any($event.target).value)" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="profile-email">Email</label>
+              <input id="profile-email" class="form-input" type="email" autocomplete="email"
+                [value]="email()" [disabled]="!canEditProfile()"
+                (input)="email.set($any($event.target).value)" />
+            </div>
+          </div>
+
+          @if (!canEditProfile()) {
+            <p class="hint-text">Vai trò của bạn không có quyền sửa hồ sơ.</p>
+          } @else if (infoChanged()) {
+            @if (infoError(); as err) {
+              <p class="field-error">{{ err }}</p>
+            }
+            <div class="card-actions">
+              <button type="button" class="btn btn-secondary" [disabled]="isSavingInfo()" (click)="resetInfo()">Hủy</button>
+              <button type="submit" class="btn btn-primary" [disabled]="isSavingInfo() || !!infoError()">
+                @if (isSavingInfo()) { <span class="spinner-sm"></span> }
+                Lưu thay đổi
+              </button>
+            </div>
+          }
+        </form>
+      </section>
+
+      <!-- ─── Change password ───────────────────────────────────── -->
+      <section class="card">
+        <h3 class="card-title">Đổi mật khẩu</h3>
+        <form class="card-body" (submit)="$event.preventDefault(); savePassword()">
+          <!-- Lets password managers associate the fields with this account -->
+          <input type="email" class="visually-hidden" autocomplete="username" [value]="u.email" tabindex="-1" aria-hidden="true" readonly />
+
+          <div class="form-group">
+            <label class="form-label" for="current-password">Mật khẩu hiện tại</label>
+            <input id="current-password" class="form-input" autocomplete="current-password"
+              [type]="showPasswords() ? 'text' : 'password'"
+              [value]="currentPassword()" (input)="currentPassword.set($any($event.target).value)" />
+          </div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label" for="new-password">Mật khẩu mới</label>
+              <input id="new-password" class="form-input" autocomplete="new-password"
+                [type]="showPasswords() ? 'text' : 'password'"
+                [value]="newPassword()" (input)="newPassword.set($any($event.target).value)" />
+              @if (passwordStrength(); as s) {
+                <div class="strength">
+                  <div class="strength-bar">
+                    <span [class]="'strength-fill strength-' + s.level"></span>
+                  </div>
+                  <span [class]="'strength-label strength-text-' + s.level">{{ s.label }}</span>
+                </div>
+              }
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="confirm-password">Nhập lại mật khẩu mới</label>
+              <input id="confirm-password" class="form-input" autocomplete="new-password"
+                [type]="showPasswords() ? 'text' : 'password'"
+                [value]="confirmPassword()" (input)="confirmPassword.set($any($event.target).value)" />
+            </div>
+          </div>
+
+          <label class="show-toggle">
+            <input type="checkbox" [checked]="showPasswords()" (change)="showPasswords.set($any($event.target).checked)" />
+            Hiện mật khẩu
+          </label>
+
+          @if (passwordError(); as err) {
+            @if (err !== 'missing') {
+              <p class="field-error">{{ err }}</p>
+            }
+          }
+
+          <div class="card-actions card-actions-split">
+            <p class="hint-text">Sau khi đổi, các thiết bị khác sẽ bị đăng xuất. Thiết bị này vẫn giữ đăng nhập.</p>
+            <button type="submit" class="btn btn-primary" [disabled]="isSavingPassword() || !!passwordError()">
+              @if (isSavingPassword()) { <span class="spinner-sm"></span> }
+              Đổi mật khẩu
+            </button>
+          </div>
+        </form>
+      </section>
+    </div>
+
+    <!-- ─── My permissions ──────────────────────────────────────── -->
+    <aside class="card permissions-card">
+      <h3 class="card-title">Quyền của tôi</h3>
+      <div class="card-body">
+        @if (isAdmin()) {
+          <div class="admin-note">
+            <strong>Toàn quyền.</strong> Quản trị viên được thực hiện mọi chức năng trong hệ thống,
+            bao gồm quản lý người dùng và phân quyền.
+          </div>
+        } @else if (permissionGroups().length === 0) {
+          <p class="hint-text">Vai trò của bạn chưa được cấp quyền nào.</p>
+        } @else {
+          <p class="perm-summary">Vai trò <strong>{{ roleText() }}</strong> có {{ permissionCount() }} quyền:</p>
+          @for (group of permissionGroups(); track group.label) {
+            <div class="perm-group">
+              <h4 class="perm-group-title">{{ group.label }}</h4>
+              <ul class="perm-list">
+                @for (item of group.items; track item) {
+                  <li>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M5 12.5l4.5 4.5L19 7.5" />
+                    </svg>
+                    {{ item }}
+                  </li>
+                }
+              </ul>
+            </div>
+          }
+          <p class="hint-text">Cần thêm quyền? Liên hệ quản trị viên.</p>
+        }
+      </div>
+    </aside>
+  </div>
+} @else {
+  <div class="loading-overlay">
+    <div class="spinner"></div>
+    <p>Đang tải...</p>
+  </div>
+}

@@ -61,6 +61,7 @@ export class HeaderComponent {
     if (url.startsWith('/bookings')) return 'Quản lý đặt vé';
     if (url.startsWith('/itineraries')) return 'Hành trình nhiều chặng';
     if (url.startsWith('/roles')) return 'Vai trò & phân quyền';
+    if (url.startsWith('/profile')) return 'Hồ sơ của tôi';
     return 'Hệ thống điều hành';
   }
 
@@ -104,6 +105,11 @@ export class HeaderComponent {
     if (!target.closest('.help-wrapper')) {
       this.isHelpOpen.set(false);
     }
+  }
+
+  goToProfile(): void {
+    this.closeDropdown();
+    this.router.navigate(['/profile']);
   }
 
   async handleLogout(): Promise<void> {

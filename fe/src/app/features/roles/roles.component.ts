@@ -3,56 +3,13 @@ import { CommonModule } from '@angular/common';
 import { ToastrService } from 'ngx-toastr';
 import { RoleService } from '../../core/services/role.service';
 import { PermissionItem, Role } from '../../core/models/role.model';
-
-/** Resources shown in the matrix. users/roles/permissions are left out: their
- *  endpoints check the admin role directly, so granting them to others does nothing. */
-const RESOURCES: { key: string; label: string }[] = [
-  { key: 'vehicles', label: 'Xe' },
-  { key: 'drivers',  label: 'Tài xế' },
-  { key: 'routes',   label: 'Tuyến đường' },
-  { key: 'trips',    label: 'Chuyến đi' },
-  { key: 'seats',    label: 'Ghế ngồi' },
-  { key: 'bookings', label: 'Đặt vé & Hành trình' },
-  { key: 'profile',  label: 'Hồ sơ cá nhân' },
-];
-
-const ACTION_ORDER = ['read', 'list', 'create', 'update', 'delete'];
-
-/** What each permission allows in this app (falls back to a generic label) */
-const PERMISSION_LABELS: Record<string, string> = {
-  'vehicles:read': 'Xem danh sách xe',
-  'vehicles:create': 'Thêm xe',
-  'vehicles:update': 'Sửa thông tin xe',
-  'vehicles:delete': 'Xóa xe',
-  'drivers:read': 'Xem danh sách tài xế',
-  'drivers:create': 'Thêm tài xế',
-  'drivers:update': 'Sửa thông tin tài xế',
-  'drivers:delete': 'Xóa tài xế',
-  'routes:read': 'Xem danh sách tuyến',
-  'routes:create': 'Thêm tuyến',
-  'routes:update': 'Sửa tuyến và điểm dừng',
-  'routes:delete': 'Xóa tuyến',
-  'trips:read': 'Xem danh sách chuyến',
-  'trips:create': 'Lên lịch chuyến',
-  'trips:update': 'Sửa, xuất phát, hoàn thành, báo trễ, hủy chuyến',
-  'trips:delete': 'Xóa chuyến',
-  'seats:read': 'Xem sơ đồ ghế',
-  'seats:update': 'Khởi tạo ghế, đánh dấu ghế hỏng',
-  'bookings:read': 'Xem đặt vé và hành trình',
-  'bookings:create': 'Đặt vé, đặt hành trình',
-  'bookings:update': 'Xác nhận, hủy vé và hành trình',
-  'bookings:delete': 'Xóa vé đã hủy',
-  'profile:read': 'Xem hồ sơ của mình',
-  'profile:update': 'Sửa hồ sơ của mình',
-};
-const ACTION_LABELS: Record<string, string> = {
-  read: 'Xem', list: 'Xem danh sách', create: 'Tạo mới', update: 'Cập nhật', delete: 'Xóa',
-};
-
-const ROLE_ORDER = ['admin', 'manager', 'staff', 'user'];
-const ROLE_LABELS: Record<string, string> = {
-  admin: 'Quản trị viên', manager: 'Quản lý', staff: 'Nhân viên', user: 'Người dùng',
-};
+import {
+  ACTION_ORDER,
+  PERMISSION_RESOURCES,
+  ROLE_ORDER,
+  permissionLabel,
+  roleLabel,
+} from '../../core/constants/permissions';
 
 /** A form only works if the role can also read the lists it needs */
 const DEPENDENCIES: { needs: string; ifAny: string[]; reason: string }[] = [
@@ -95,7 +52,7 @@ export class RolesComponent implements OnInit {
   );
 
   groups = computed<PermissionGroup[]>(() =>
-    RESOURCES
+    PERMISSION_RESOURCES
       .map(r => ({
         key: r.key,
         label: r.label,
@@ -238,11 +195,11 @@ export class RolesComponent implements OnInit {
 
   // ─── Labels ────────────────────────────────────────────────────
   roleLabel(role: Role): string {
-    return ROLE_LABELS[role.name] ?? role.name;
+    return roleLabel(role.name);
   }
 
   permissionLabel(key: string): string {
-    return PERMISSION_LABELS[key] ?? ACTION_LABELS[key.split(':')[1]] ?? key;
+    return permissionLabel(key);
   }
 
   permKey(p: PermissionItem): string {

@@ -94,7 +94,11 @@ export class AuthService {
   async logout(): Promise<void> {
     this._isLoading.set(true);
     try {
-      await firstValueFrom(this.http.post(`${this.apiUrl}/auth/logout`, {}));
+      // Send this device's refresh token so only this session ends —
+      // an empty body makes the backend sign out every device
+      await firstValueFrom(this.http.post(`${this.apiUrl}/auth/logout`, {
+        refreshToken: this.tokenStorage.getRefreshToken(),
+      }));
     } catch {
       // Continue even if API fails
     } finally {
@@ -118,9 +122,12 @@ export class AuthService {
         }),
       );
 
-      const { token: newToken } = response.data;
+      // The backend rotates refresh tokens: the old one is now invalid, so keep the new one
+      const { token: newToken, refreshToken: newRefreshToken } = response.data;
       this.tokenStorage.setToken(newToken, true);
+      this.tokenStorage.setRefreshToken(newRefreshToken, true);
       this._token.set(newToken);
+      this._refreshToken.set(newRefreshToken);
       return true;
     } catch {
       this.tokenStorage.clearAll();

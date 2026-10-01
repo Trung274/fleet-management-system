@@ -45,6 +45,8 @@ export interface RefreshTokenResponse {
   success: boolean;
   data: {
     token: string;
+    /** Rotated — the refresh token that was sent is no longer valid */
+    refreshToken: string;
   };
 }
 

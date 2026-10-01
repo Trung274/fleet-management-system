@@ -23,6 +23,11 @@ const login = (password) => request(app)
   .post('/api/v1/auth/login')
   .send({ email: EMAIL, password });
 
+// One connection for the whole file, closed after every describe block has run
+afterAll(async () => {
+  await mongoose.connection.close();
+});
+
 describe('Auth API — change password', () => {
   let token, refreshToken;
 
@@ -41,7 +46,6 @@ describe('Auth API — change password', () => {
 
   afterAll(async () => {
     await User.deleteOne({ email: EMAIL });
-    await mongoose.connection.close();
   });
 
   const changePassword = (body, bearer = token) => request(app)
@@ -90,5 +94,48 @@ describe('Auth API — change password', () => {
   test('[Security] Change password without token returns 401', async () => {
     const res = await request(app).put('/api/v1/auth/change-password').send({});
     expect(res.status).toBe(401);
+  });
+});
+
+describe('Auth API — sessions (refresh rotation and logout)', () => {
+  const SESSION_EMAIL = 'session.test@test.com';
+  const PASSWORD = 'Session@1';
+  const loginSession = () => request(app).post('/api/v1/auth/login').send({ email: SESSION_EMAIL, password: PASSWORD });
+  const refresh = (refreshToken) => request(app).post('/api/v1/auth/refresh-token').send({ refreshToken });
+
+  beforeAll(async () => {
+    await User.deleteOne({ email: SESSION_EMAIL });
+    const staffRole = await Role.findOne({ name: 'staff' });
+    await User.create({ name: 'Session Tester', email: SESSION_EMAIL, password: PASSWORD, role: staffRole._id });
+  }, 30000);
+
+  afterAll(async () => {
+    await User.deleteOne({ email: SESSION_EMAIL });
+  });
+
+  test('[Integration] Refresh rotates the refresh token — the new one keeps working, the old one does not', async () => {
+    const { refreshToken } = (await loginSession()).body.data;
+
+    const first = await refresh(refreshToken);
+    expect(first.status).toBe(200);
+    expect(first.body.data.refreshToken).toBeDefined();
+
+    // Reusing the original token fails; chaining with the returned one succeeds
+    expect((await refresh(refreshToken)).status).toBe(401);
+    expect((await refresh(first.body.data.refreshToken)).status).toBe(200);
+  });
+
+  test('[Integration] Logout with a refresh token ends only that session', async () => {
+    const deviceA = (await loginSession()).body.data;
+    const deviceB = (await loginSession()).body.data;
+
+    const res = await request(app)
+      .post('/api/v1/auth/logout')
+      .set('Authorization', `Bearer ${deviceA.token}`)
+      .send({ refreshToken: deviceA.refreshToken });
+    expect(res.status).toBe(200);
+
+    expect((await refresh(deviceA.refreshToken)).status).toBe(401);
+    expect((await refresh(deviceB.refreshToken)).status).toBe(200);
   });
 });

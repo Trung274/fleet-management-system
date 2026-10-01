@@ -1,19 +1,24 @@
 const User = require('../models/User.model');
 const Role = require('../models/Role.model');
+const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const asyncHandler = require('../utils/asyncHandler');
 const ErrorResponse = require('../utils/errorResponse');
 
+// Every token gets a random jti: id + iat alone repeat within the same second, so two logins
+// (or a login and a refresh) in one second would otherwise share a refresh token — rotation
+// and per-device logout match tokens by value.
+
 // Generate JWT Token
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
+  return jwt.sign({ id, jti: crypto.randomUUID() }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRE
   });
 };
 
 // Generate Refresh Token
 const generateRefreshToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_REFRESH_SECRET, {
+  return jwt.sign({ id, jti: crypto.randomUUID() }, process.env.JWT_REFRESH_SECRET, {
     expiresIn: process.env.JWT_REFRESH_EXPIRE
   });
 };
